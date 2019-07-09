@@ -1,0 +1,2 @@
+[resources]
+operator.url = ${OPERATOR_URL}
