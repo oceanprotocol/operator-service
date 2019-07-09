@@ -92,16 +92,24 @@ def init_workflow():
     # Configure API key authorization: BearerToken
     configuration = kubernetes.client.Configuration()
     configuration.api_key['authorization'] = 'YOUR_API_KEY'
-    api_instance = kubernetes.client.ApiextensionsV1beta1Api(
-        kubernetes.client.ApiClient(configuration))
-    body = kubernetes.client.V1beta1CustomResourceDefinition()
+    # Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+    # configuration.api_key_prefix['authorization'] = 'Bearer'
+
+    # create an instance of the API class
+    api_instance = kubernetes.client.CustomObjectsApi(kubernetes.client.ApiClient(configuration))
+    group = 'oceanprotocol.com'  # str | The custom resource's group name
+    version = 'v1alpha'  # str | The custom resource's version
+    namespace = 'ocean-compute'  # str | The custom resource's namespace
+    plural = 'WorkFlow'  # str | The custom resource's plural name. For TPRs this would be
+    # lowercase plural kind.
+    body = {}  # object | The JSON schema of the Resource to create.
+
     try:
-        api_response = api_instance.create_custom_resource_definition(body)
+        api_response = api_instance.create_namespaced_custom_object(group, version, namespace,
+                                                                    plural, body)
         logging.info(api_response)
     except ApiException as e:
-        print(
-            "Exception when calling ApiextensionsV1beta1Api->create_custom_resource_definition: "
-            "%s\n" % e)
+        print("Exception when calling CustomObjectsApi->create_namespaced_custom_object: %s\n" % e)
 
     return 'Hello', 200
 
@@ -119,4 +127,41 @@ def stop_workflow():
       - name: serviceDefinitionId
 
     """
+    # Configure API key authorization: BearerToken
+    configuration = kubernetes.client.Configuration()
+    configuration.api_key['authorization'] = 'YOUR_API_KEY'
+    # Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
+    # configuration.api_key_prefix['authorization'] = 'Bearer'
+
+    # create an instance of the API class
+    api_instance = kubernetes.client.CustomObjectsApi(kubernetes.client.ApiClient(configuration))
+    group = 'group_example'  # str | the custom resource's group
+    version = 'version_example'  # str | the custom resource's version
+    namespace = 'namespace_example'  # str | The custom resource's namespace
+    plural = 'plural_example'  # str | the custom resource's plural name. For TPRs this would be
+    # lowercase plural kind.
+    name = 'name_example'  # str | the custom object's name
+    body = kubernetes.client.V1DeleteOptions()  # V1DeleteOptions |
+    grace_period_seconds = 56  # int | The duration in seconds before the object should be
+    # deleted. Value must be non-negative integer. The value zero indicates delete immediately.
+    # If this value is nil, the default grace period for the specified type will be used.
+    # Defaults to a per object value if not specified. zero means delete immediately. (optional)
+    orphan_dependents = True  # bool | Deprecated: please use the PropagationPolicy, this field
+    # will be deprecated in 1.7. Should the dependent objects be orphaned. If true/false,
+    # the \"orphan\" finalizer will be added to/removed from the object's finalizers list. Either
+    # this field or PropagationPolicy may be set, but not both. (optional)
+    propagation_policy = 'propagation_policy_example'  # str | Whether and how garbage collection
+    # will be performed. Either this field or OrphanDependents may be set, but not both. The
+    # default policy is decided by the existing finalizer set in the metadata.finalizers and the
+    # resource-specific default policy. (optional)
+
+    try:
+        api_response = api_instance.delete_namespaced_custom_object(group, version, namespace,
+                                                                    plural, name, body,
+                                                                    grace_period_seconds=grace_period_seconds,
+                                                                    orphan_dependents=orphan_dependents,
+                                                                    propagation_policy=propagation_policy)
+        logging.info(api_response)
+    except ApiException as e:
+        print("Exception when calling CustomObjectsApi->delete_namespaced_custom_object: %s\n" % e)
     return 'Successfully delete', 200
