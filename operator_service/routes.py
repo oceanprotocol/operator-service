@@ -1,4 +1,8 @@
+import logging
+
+import kubernetes
 from flask import Blueprint
+from kubernetes.client.rest import ApiException
 
 services = Blueprint('services', __name__)
 
@@ -85,4 +89,34 @@ def init_workflow():
       400:
         description: Some error
     """
+    # Configure API key authorization: BearerToken
+    configuration = kubernetes.client.Configuration()
+    configuration.api_key['authorization'] = 'YOUR_API_KEY'
+    api_instance = kubernetes.client.ApiextensionsV1beta1Api(
+        kubernetes.client.ApiClient(configuration))
+    body = kubernetes.client.V1beta1CustomResourceDefinition()
+    try:
+        api_response = api_instance.create_custom_resource_definition(body)
+        logging.info(api_response)
+    except ApiException as e:
+        print(
+            "Exception when calling ApiextensionsV1beta1Api->create_custom_resource_definition: "
+            "%s\n" % e)
+
     return 'Hello', 200
+
+
+@services.route('/stop', methods=['DELETE'])
+def stop_workflow():
+    """
+    Stop the current workflow.
+    ---
+    tags:
+      - operation
+    consumes:
+      - application/json
+    parameters:
+      - name: serviceDefinitionId
+
+    """
+    return 'Successfully delete', 200

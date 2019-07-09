@@ -20,6 +20,7 @@ install_requirements = [
     'flask-swagger==0.2.14',
     'flask-swagger-ui==3.20.9',
     'Jinja2>=2.10.1',
+    'kubernetes==10.0.0',
     'requests>=2.21.0',
     'gunicorn==19.9.0',
     'PyYAML==5.1',
