@@ -3,6 +3,7 @@ import logging
 import kubernetes
 from flask import Blueprint
 from kubernetes.client.rest import ApiException
+from kubernetes import client, config
 
 services = Blueprint('services', __name__)
 
@@ -89,14 +90,12 @@ def init_workflow():
       400:
         description: Some error
     """
-    # Configure API key authorization: BearerToken
-    configuration = kubernetes.client.Configuration()
-    configuration.api_key['authorization'] = 'YOUR_API_KEY'
-    # Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-    # configuration.api_key_prefix['authorization'] = 'Bearer'
+    # Configuration to connect to k8s.
+    config.load_kube_config()
 
     # create an instance of the API class
-    api_instance = kubernetes.client.CustomObjectsApi(kubernetes.client.ApiClient(configuration))
+    api_instance = client.CustomObjectsApi()
+
     group = 'oceanprotocol.com'  # str | The custom resource's group name
     version = 'v1alpha'  # str | The custom resource's version
     namespace = 'ocean-compute'  # str | The custom resource's namespace
@@ -108,10 +107,11 @@ def init_workflow():
         api_response = api_instance.create_namespaced_custom_object(group, version, namespace,
                                                                     plural, body)
         logging.info(api_response)
-    except ApiException as e:
-        print("Exception when calling CustomObjectsApi->create_namespaced_custom_object: %s\n" % e)
+        return 'Workflow started', 200
 
-    return 'Hello', 200
+    except ApiException as e:
+        logging.error(f'Exception when calling CustomObjectsApi->create_namespaced_custom_object: {e}')
+        return 'Workflow could not start', 400
 
 
 @services.route('/stop', methods=['DELETE'])
@@ -127,18 +127,17 @@ def stop_workflow():
       - name: serviceDefinitionId
 
     """
-    # Configure API key authorization: BearerToken
-    configuration = kubernetes.client.Configuration()
-    configuration.api_key['authorization'] = 'YOUR_API_KEY'
-    # Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-    # configuration.api_key_prefix['authorization'] = 'Bearer'
+    # Configuration to connect to k8s.
+    config.load_kube_config()
 
     # create an instance of the API class
-    api_instance = kubernetes.client.CustomObjectsApi(kubernetes.client.ApiClient(configuration))
-    group = 'group_example'  # str | the custom resource's group
-    version = 'version_example'  # str | the custom resource's version
-    namespace = 'namespace_example'  # str | The custom resource's namespace
-    plural = 'plural_example'  # str | the custom resource's plural name. For TPRs this would be
+    api_instance = client.CustomObjectsApi()
+
+    # create an instance of the API class
+    group = 'oceanprotocol.com'  # str | The custom resource's group name
+    version = 'v1alpha'  # str | The custom resource's version
+    namespace = 'ocean-compute'  # str | The custom resource's namespace
+    plural = 'WorkFlow'  # str | The custom resource's plural name. For TPRs this would be
     # lowercase plural kind.
     name = 'name_example'  # str | the custom object's name
     body = kubernetes.client.V1DeleteOptions()  # V1DeleteOptions |
