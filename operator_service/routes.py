@@ -1,11 +1,27 @@
 import logging
+from configparser import ConfigParser
 
 import kubernetes
+import yaml
 from flask import Blueprint
-from kubernetes.client.rest import ApiException
 from kubernetes import client, config
+from kubernetes.client.rest import ApiException
 
 services = Blueprint('services', __name__)
+
+# Configuration to connect to k8s.
+config.load_kube_config()
+# create an instance of the API class
+api_instance = client.CustomObjectsApi()
+
+config_parser = ConfigParser()
+configuration = config_parser.read('config.ini')
+group = config_parser.get('resources', 'group')  # str | The custom resource's group name
+version = config_parser.get('resources', 'version')  # str | The custom resource's version
+namespace = config_parser.get('resources', 'namespace')  # str | The custom resource's namespace
+plural = config_parser.get('resources',
+                           'plural')  # str | The custom resource's plural name. For TPRs this
+# would be
 
 
 @services.route('/init', methods=['POST'])
@@ -90,27 +106,18 @@ def init_workflow():
       400:
         description: Some error
     """
-    # Configuration to connect to k8s.
-    config.load_kube_config()
-
-    # create an instance of the API class
-    api_instance = client.CustomObjectsApi()
-
-    group = 'oceanprotocol.com'  # str | The custom resource's group name
-    version = 'v1alpha'  # str | The custom resource's version
-    namespace = 'ocean-compute'  # str | The custom resource's namespace
-    plural = 'WorkFlow'  # str | The custom resource's plural name. For TPRs this would be
-    # lowercase plural kind.
-    body = {}  # object | The JSON schema of the Resource to create.
-
+    with open('operator_service/workflow.yaml', 'r') as stream:
+        body = yaml.safe_load(stream)
+    body['apiVersion'] = group + '/' + version
     try:
         api_response = api_instance.create_namespaced_custom_object(group, version, namespace,
                                                                     plural, body)
         logging.info(api_response)
-        return 'Workflow started', 200
+        return yaml.dump(api_response), 200
 
     except ApiException as e:
-        logging.error(f'Exception when calling CustomObjectsApi->create_namespaced_custom_object: {e}')
+        logging.error(
+            f'Exception when calling CustomObjectsApi->create_namespaced_custom_object: {e}')
         return 'Workflow could not start', 400
 
 
@@ -125,21 +132,8 @@ def stop_workflow():
       - application/json
     parameters:
       - name: serviceDefinitionId
-
     """
-    # Configuration to connect to k8s.
-    config.load_kube_config()
-
-    # create an instance of the API class
-    api_instance = client.CustomObjectsApi()
-
-    # create an instance of the API class
-    group = 'oceanprotocol.com'  # str | The custom resource's group name
-    version = 'v1alpha'  # str | The custom resource's version
-    namespace = 'ocean-compute'  # str | The custom resource's namespace
-    plural = 'WorkFlow'  # str | The custom resource's plural name. For TPRs this would be
-    # lowercase plural kind.
-    name = 'name_example'  # str | the custom object's name
+    name = 'workflow-1'  # str | the custom object's name
     body = kubernetes.client.V1DeleteOptions()  # V1DeleteOptions |
     grace_period_seconds = 56  # int | The duration in seconds before the object should be
     # deleted. Value must be non-negative integer. The value zero indicates delete immediately.
@@ -164,3 +158,25 @@ def stop_workflow():
     except ApiException as e:
         print("Exception when calling CustomObjectsApi->delete_namespaced_custom_object: %s\n" % e)
     return 'Successfully delete', 200
+
+
+@services.route('/list', methods=['GET'])
+def list_workflows():
+    """
+    List all the workflows.
+    ---
+    tags:
+      - operation
+    consumes:
+      - application/json
+    """
+    try:
+        api_response = api_instance.list_cluster_custom_object(group, version, plural)
+
+        logging.info(api_response)
+        return yaml.dump(api_response), 200
+
+    except ApiException as e:
+        logging.error(
+            f'Exception when calling CustomObjectsApi->list_cluster_custom_object: {e}')
+        return 'Error listing workflows', 400

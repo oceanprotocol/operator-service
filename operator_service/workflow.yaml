@@ -4,7 +4,6 @@ metadata:
   name: workflow-1
   namespace: ocean-compute
   labels:
-    did: "0123456789"
     workflow: workflow-1
 spec:
   metadata:
