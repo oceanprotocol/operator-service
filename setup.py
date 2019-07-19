@@ -74,6 +74,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/oceanprotocol/operator-service',
-    version='0.3.7',
+    version='0.0.1',
     zip_safe=False,
 )

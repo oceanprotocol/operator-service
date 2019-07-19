@@ -10,6 +10,7 @@ class BaseURLs:
     BASE_OPERATOR_URL = '/api/v1/operator'
     SWAGGER_URL = '/api/v1/docs'  # URL for exposing Swagger UI (without trailing '/')
 
+
 class Metadata:
     TITLE = 'Operator service'
     DESCRIPTION = 'Infrastructure Operator Micro-service' \

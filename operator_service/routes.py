@@ -1,9 +1,10 @@
 import logging
+import uuid
 from configparser import ConfigParser
 
 import kubernetes
 import yaml
-from flask import Blueprint
+from flask import Blueprint, request
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
@@ -21,13 +22,15 @@ version = config_parser.get('resources', 'version')  # str | The custom resource
 namespace = config_parser.get('resources', 'namespace')  # str | The custom resource's namespace
 plural = config_parser.get('resources',
                            'plural')  # str | The custom resource's plural name. For TPRs this
+
+
 # would be
 
 
 @services.route('/init', methods=['POST'])
-def init_workflow():
+def init_execution():
     """
-    Initialize the worker when someone call to the execute endpoint in brizo.
+    Initialize the execution when someone call to the execute endpoint in brizo.
     ---
     tags:
       - operation
@@ -106,9 +109,10 @@ def init_workflow():
       400:
         description: Some error
     """
-    with open('operator_service/workflow.yaml', 'r') as stream:
-        body = yaml.safe_load(stream)
-    body['apiVersion'] = group + '/' + version
+    # with open('operator_service/workflow.yaml', 'r') as stream:
+    #     body = yaml.safe_load(stream)
+    execution_id = generate_new_id()
+    body = create_execution(request.json['workflow'], execution_id)
     try:
         api_response = api_instance.create_namespaced_custom_object(group, version, namespace,
                                                                     plural, body)
@@ -122,18 +126,18 @@ def init_workflow():
 
 
 @services.route('/stop', methods=['DELETE'])
-def stop_workflow():
+def stop_execution():
     """
-    Stop the current workflow.
+    Stop the current workflow execution.
     ---
     tags:
       - operation
     consumes:
       - application/json
     parameters:
-      - name: serviceDefinitionId
+      - name: executionId
     """
-    name = 'workflow-1'  # str | the custom object's name
+    name = request.args['executionId']  # str | the custom object's name
     body = kubernetes.client.V1DeleteOptions()  # V1DeleteOptions |
     grace_period_seconds = 56  # int | The duration in seconds before the object should be
     # deleted. Value must be non-negative integer. The value zero indicates delete immediately.
@@ -161,9 +165,9 @@ def stop_workflow():
 
 
 @services.route('/list', methods=['GET'])
-def list_workflows():
+def list_executions():
     """
-    List all the workflows.
+    List all the execution workflows.
     ---
     tags:
       - operation
@@ -180,3 +184,30 @@ def list_workflows():
         logging.error(
             f'Exception when calling CustomObjectsApi->list_cluster_custom_object: {e}')
         return 'Error listing workflows', 400
+
+
+def create_execution(workflow, execution_id):
+    execution = dict()
+    execution['apiVersion'] = group + '/' + version
+    execution['kind'] = 'WorkFlow'
+    execution['metadata'] = dict()
+    execution['metadata']['name'] = execution_id
+    execution['metadata']['namespace'] = namespace
+    execution['metadata']['labels'] = dict()
+    execution['metadata']['labels']['workflow'] = execution_id
+    execution['spec'] = dict()
+    execution['spec']['base'] = dict()
+    execution['spec']['base']['type'] = 'workflow'
+    execution['spec']['curation'] = dict()
+    execution['spec']['curation']['no'] = 'output'
+    execution['spec']['workflow'] = workflow
+    return execution
+
+# TODO Use the commons utils library to do this when we set up the project.
+def generate_new_id():
+    """
+    Generate a new id without prefix.
+
+    :return: Id, str
+    """
+    return uuid.uuid4().hex
