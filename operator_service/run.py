@@ -11,6 +11,7 @@ from operator_service.myapp import app
 from operator_service.constants import Metadata, ConfigSections, BaseURLs
 from operator_service.routes import services
 
+
 def get_version():
     conf = configparser.ConfigParser()
     conf.read('.bumpversion.cfg')

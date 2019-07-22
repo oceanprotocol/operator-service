@@ -54,55 +54,78 @@ def init_execution():
             workflow:
               description: Workflow definition.
               type: dictionary
-              example: {"stages": [{
-          "index": 0,
-          "stageType": "Filtering",
-          "requirements": {
-            "computeServiceId": "did:op8934894328989423",
-            "serviceDefinitionId": "1",
-            "serverId": "1",
-            "serverInstances": 1,
-            "container": {
-              "image": "tensorflow/tensorflow",
-              "tag": "latest",
-              "checksum": "sha256:cb57ecfa6ebbefd8ffc7f75c0f00e57a7fa739578a429b6f72a0df19315deadc"
-            }
-          },
-          "input": [{
-            "index": 0,
-            "id": "did:op:12345"
-          }, {
-              "index": 1,
-              "id": "did:op:67890"
-            }
-          ],
-          "transformation": {
-            "id": "did:op:abcde"
-          },
-          "output": {}
-        }, {
-          "index": 1,
-          "stageType": "Transformation",
-          "requirements": {
-            "computeServiceId": "did:op8934894328989423",
-            "serviceDefinitionId": "1",
-            "serverId": "2",
-            "serverInstances": 1,
-            "container": {
-              "image": "tensorflow/tensorflow",
-              "tag": "latest",
-              "checksum": "sha256:cb57ecfa6ebbefd8ffc7f75c0f00e57a7fa739578a429b6f72a0df19315deadc"
-            }
-          },
-          "input": [{
-            "index": 0,
-            "previousStage": 0
-          }],
-          "transformation": {
-            "id": "did:op:999999"
-          },
-          "output": {}
-        }]}
+              example:   {"metadata": {
+                          "base": {
+                            "author": "Met Office",
+                            "checksum": "0x67184faa8ccb1818524ed54127df79bc79700646659709ca2e7e6e6902060a3a",
+                            "copyrightHolder": "Met Office",
+                            "dateCreated": "2012-10-10T17:00:00Z",
+                            "description": "Cleansing and filtering workflow of satellite stations",
+                            "files": [],
+                            "inLanguage": "en",
+                            "license": "CC-BY",
+                            "name": "Satellite Cleansing process",
+                            "price": "0",
+                            "type": "workflow",
+                            "datePublished": "2019-04-09T19:02:11Z"
+                          },
+                          "curation": {
+                            "rating": 0.0,
+                            "numVotes": 0,
+                            "isListed": true
+                          },
+                          "workflow": {
+                            "stages": [{
+                              "index": 0,
+                              "stageType": "Filtering",
+                              "requirements": {
+                                "computeServiceId": "did:op8934894328989423",
+                                "serviceDefinitionId": "1",
+                                "serverId": "1",
+                                "serverInstances": 1,
+                                "container": {
+                                  "image": "tensorflow/tensorflow",
+                                  "tag": "latest",
+                                  "checksum": "sha256:cb57ecfa6ebbefd8ffc7f75c0f00e57a7fa739578a429b6f72a0df19315deadc"
+                                }
+                              },
+                              "input": [{
+                                "index": 0,
+                                "id": "did:op:12345"
+                              }, {
+                                "index": 1,
+                                "id": "did:op:67890"
+                              }
+                              ],
+                              "transformation": {
+                                "id": "did:op:abcde"
+                              },
+                              "output": {}
+                            }, {
+                              "index": 1,
+                              "stageType": "Transformation",
+                              "requirements": {
+                                "computeServiceId": "did:op8934894328989423",
+                                "serviceDefinitionId": "1",
+                                "serverId": "2",
+                                "serverInstances": 1,
+                                "container": {
+                                  "image": "tensorflow/tensorflow",
+                                  "tag": "latest",
+                                  "checksum": "sha256:cb57ecfa6ebbefd8ffc7f75c0f00e57a7fa739578a429b6f72a0df19315deadc"
+                                }
+                              },
+                              "input": [{
+                                "index": 0,
+                                "previousStage": 0
+                              }],
+                              "transformation": {
+                                "id": "did:op:999999"
+                              },
+                              "output": {}
+                            }]
+                          }
+                        }}
     response:
       201:
         description: Workflow inited successfully.
@@ -196,12 +219,9 @@ def create_execution(workflow, execution_id):
     execution['metadata']['labels'] = dict()
     execution['metadata']['labels']['workflow'] = execution_id
     execution['spec'] = dict()
-    execution['spec']['base'] = dict()
-    execution['spec']['base']['type'] = 'workflow'
-    execution['spec']['curation'] = dict()
-    execution['spec']['curation']['no'] = 'output'
-    execution['spec']['workflow'] = workflow
+    execution['spec']['metadata'] = workflow
     return execution
+
 
 # TODO Use the commons utils library to do this when we set up the project.
 def generate_new_id():
