@@ -75,7 +75,6 @@ def init_execution():
                             "type": "metadata",
                             "attributes": {
                                 "main": {
-                                    "checksum": "0x67184faa8ccb1818524ed54127df79bc79700646659709ca2e7e6e6902060a3a",
                                     "dateCreated": "2012-10-10T17:00:00Z",
                                     "type": "workflow",
                                     "datePublished": "2019-04-09T19:02:11Z",
