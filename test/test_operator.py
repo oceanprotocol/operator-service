@@ -1,5 +1,6 @@
+import json
 
 
 def test_operator(client):
-    rv = client.post('/api/v1/operator/init')
-    assert rv.data.decode('utf-8') == 'Hello'
+    rv = client.get('/')
+    assert json.loads(rv.data.decode('utf-8'))['software'] == 'Operator service'

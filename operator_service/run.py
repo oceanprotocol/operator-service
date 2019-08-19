@@ -7,8 +7,8 @@ from flask import jsonify
 from flask_swagger import swagger
 from flask_swagger_ui import get_swaggerui_blueprint
 
+from operator_service.constants import BaseURLs, ConfigSections, Metadata
 from operator_service.myapp import app
-from operator_service.constants import Metadata, ConfigSections, BaseURLs
 from operator_service.routes import services
 
 
@@ -16,6 +16,14 @@ def get_version():
     conf = configparser.ConfigParser()
     conf.read('.bumpversion.cfg')
     return conf['bumpversion']['current_version']
+
+
+@app.route('/')
+def version():
+    info = dict()
+    info['software'] = Metadata.TITLE
+    info['version'] = get_version()
+    return jsonify(info)
 
 
 @app.route("/spec")
