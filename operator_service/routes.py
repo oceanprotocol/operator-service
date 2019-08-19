@@ -70,61 +70,63 @@ def init_execution():
                             "type": "EthereumECDSAKey"
                         }],
                         "service":[{
-                        "index" : 0,
-                        "serviceEndpoint": "http://172.15.0.15:5000/api/v1/aquarius/assets/ddo/did:op:8d1b4d73e7af4634958f071ab8dfe7ab0df14019755e444090fd392c8ec9c3f4",
-                        "type": "metadata",
-                        "attributes": {
-                          "main": {
-                            "checksum": "0x67184faa8ccb1818524ed54127df79bc79700646659709ca2e7e6e6902060a3a",
-                            "dateCreated": "2012-10-10T17:00:00Z",
-                            "type": "workflow",
-                            "datePublished": "2019-04-09T19:02:11Z",
-                              "workflow": {
-                                "stages": [{
-                                  "index": 0,
-                                  "stageType": "Filtering",
-                                  "requirements": {
-                                    "serverInstances": 1,
-                                    "container": {
-                                      "image": "tensorflow/tensorflow",
-                                      "tag": "latest",
-                                      "checksum": "sha256:cb57ecfa6ebbefd8ffc7f75c0f00e57a7fa739578a429b6f72a0df19315deadc"
-                                    }
-                                  },
-                                  "input": [{
-                                    "index": 0,
-                                    "id": "did:op:12345"
-                                  }, {
-                                    "index": 1,
-                                    "id": "did:op:67890"
-                                  }
-                                  ],
-                                  "transformation": {
-                                    "id": "did:op:abcde"
-                                  },
-                                  "output": {}
-                                }, {
-                                  "index": 1,
-                                  "stageType": "Transformation",
-                                  "requirements": {
-                                    "serverInstances": 1,
-                                    "container": {
-                                      "image": "tensorflow/tensorflow",
-                                      "tag": "latest",
-                                      "checksum": "sha256:cb57ecfa6ebbefd8ffc7f75c0f00e57a7fa739578a429b6f72a0df19315deadc"
-                                    }
-                                  },
-                                  "input": [{
-                                    "index": 0,
-                                    "previousStage": 0
-                                  }],
-                                  "transformation": {
-                                    "id": "did:op:999999"
-                                  },
-                                  "output": {}
-                                }]
-                              }
-                        }}]
+                            "index" : 0,
+                            "serviceEndpoint": "http://172.15.0.15:5000/api/v1/aquarius/assets/ddo/did:op:8d1b4d73e7af4634958f071ab8dfe7ab0df14019755e444090fd392c8ec9c3f4",
+                            "type": "metadata",
+                            "attributes": {
+                                "main": {
+                                    "checksum": "0x67184faa8ccb1818524ed54127df79bc79700646659709ca2e7e6e6902060a3a",
+                                    "dateCreated": "2012-10-10T17:00:00Z",
+                                    "type": "workflow",
+                                    "datePublished": "2019-04-09T19:02:11Z",
+                                    "workflow": {
+                                        "stages": [{
+                                          "index": 0,
+                                          "stageType": "Filtering",
+                                          "requirements": {
+                                            "serverInstances": 1,
+                                            "container": {
+                                              "image": "tensorflow/tensorflow",
+                                              "tag": "latest",
+                                              "checksum": "sha256:cb57ecfa6ebbefd8ffc7f75c0f00e57a7fa739578a429b6f72a0df19315deadc"
+                                            }
+                                          },
+                                          "input": [{
+                                            "index": 0,
+                                            "id": "did:op:12345"
+                                          }, {
+                                            "index": 1,
+                                            "id": "did:op:67890"
+                                          }
+                                          ],
+                                          "transformation": {
+                                            "id": "did:op:abcde"
+                                          },
+                                          "output": {}
+                                        }, {
+                                          "index": 1,
+                                          "stageType": "Transformation",
+                                          "requirements": {
+                                            "serverInstances": 1,
+                                            "container": {
+                                              "image": "tensorflow/tensorflow",
+                                              "tag": "latest",
+                                              "checksum": "sha256:cb57ecfa6ebbefd8ffc7f75c0f00e57a7fa739578a429b6f72a0df19315deadc"
+                                            }
+                                          },
+                                          "input": [{
+                                            "index": 0,
+                                            "previousStage": 0
+                                          }],
+                                          "transformation": {
+                                            "id": "did:op:999999"
+                                          },
+                                          "output": {}
+                                        }]
+                                      }
+                                }}
+                                }
+                            ]
                         }
 
     response:
