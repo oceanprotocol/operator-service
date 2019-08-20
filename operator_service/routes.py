@@ -4,7 +4,7 @@ from configparser import ConfigParser
 
 import kubernetes
 import yaml
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, jsonify, request
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
@@ -57,21 +57,26 @@ def init_execution():
               example: {"@context": "https://w3id.org/future-method/v1",
                         "authentication": [],
                         "created": "2019-04-09T19:02:11Z",
-                        "id": "did:op:8d1b4d73e7af4634958f071ab8dfe7ab0df14019755e444090fd392c8ec9c3f4",
+                        "id":
+                        "did:op:8d1b4d73e7af4634958f071ab8dfe7ab0df14019755e444090fd392c8ec9c3f4",
                         "proof": {
                             "created": "2019-04-09T19:02:11Z",
                             "creator": "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e",
-                            "signatureValue": "1cd57300733bcbcda0beb59b3e076de6419c0d7674e7befb77820b53c79e3aa8f1776effc64cf088bad8cb694cc4d71ebd74a13b2f75893df5a53f3f318f6cf828",
+                            "signatureValue":
+                            "1cd57300733bcbcda0beb59b3e076de6419c0d7674e7befb77820b53c79e3aa8f1776effc64cf088bad8cb694cc4d71ebd74a13b2f75893df5a53f3f318f6cf828",
                             "type": "DDOIntegritySignature"
                         },
                         "publicKey": [{
-                            "id": "did:op:8d1b4d73e7af4634958f071ab8dfe7ab0df14019755e444090fd392c8ec9c3f4",
+                            "id":
+                            "did:op:8d1b4d73e7af4634958f071ab8dfe7ab0df14019755e444090fd392c8ec9c3f4",
                             "owner": "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e",
                             "type": "EthereumECDSAKey"
                         }],
                         "service":[{
                             "index" : 0,
-                            "serviceEndpoint": "http://172.15.0.15:5000/api/v1/aquarius/assets/ddo/did:op:8d1b4d73e7af4634958f071ab8dfe7ab0df14019755e444090fd392c8ec9c3f4",
+                            "serviceEndpoint":
+                            "http://172.15.0.15:5000/api/v1/aquarius/assets/ddo/did:op
+                            :8d1b4d73e7af4634958f071ab8dfe7ab0df14019755e444090fd392c8ec9c3f4",
                             "type": "metadata",
                             "attributes": {
                                 "main": {
@@ -87,7 +92,8 @@ def init_execution():
                                             "container": {
                                               "image": "tensorflow/tensorflow",
                                               "tag": "latest",
-                                              "checksum": "sha256:cb57ecfa6ebbefd8ffc7f75c0f00e57a7fa739578a429b6f72a0df19315deadc"
+                                              "checksum":
+                                              "sha256:cb57ecfa6ebbefd8ffc7f75c0f00e57a7fa739578a429b6f72a0df19315deadc"
                                             }
                                           },
                                           "input": [{
@@ -110,7 +116,8 @@ def init_execution():
                                             "container": {
                                               "image": "tensorflow/tensorflow",
                                               "tag": "latest",
-                                              "checksum": "sha256:cb57ecfa6ebbefd8ffc7f75c0f00e57a7fa739578a429b6f72a0df19315deadc"
+                                              "checksum":
+                                              "sha256:cb57ecfa6ebbefd8ffc7f75c0f00e57a7fa739578a429b6f72a0df19315deadc"
                                             }
                                           },
                                           "input": [{
@@ -187,8 +194,8 @@ def stop_execution():
     return 'Successfully delete', 200
 
 
-@services.route('/info/<executionId>', methods=['GET'])
-def get_execution_info(executionId):
+@services.route('/info/<execution_id>', methods=['GET'])
+def get_execution_info(execution_id):
     """
     Get info for an execution id.
     ---
@@ -204,12 +211,13 @@ def get_execution_info(executionId):
         type: string
     """
     try:
-        api_response = api_instance.get_namespaced_custom_object(group, version, namespace, plural, executionId)
+        api_response = api_instance.get_namespaced_custom_object(group, version, namespace, plural,
+                                                                 execution_id)
         logging.info(api_response)
         return yaml.dump(api_response), 200
     except ApiException as e:
-        logging.error(f'The executionId {executionId} is not registered in your namespace.')
-        return f'The executionId {executionId} is not registered in your namespace.', 400
+        logging.error(f'The executionId {execution_id} is not registered in your namespace.')
+        return f'The executionId {execution_id} is not registered in your namespace.', 400
 
 
 @services.route('/list', methods=['GET'])
