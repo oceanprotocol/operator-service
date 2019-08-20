@@ -4,7 +4,7 @@ from configparser import ConfigParser
 
 import kubernetes
 import yaml
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
@@ -140,7 +140,7 @@ def init_execution():
         api_response = api_instance.create_namespaced_custom_object(group, version, namespace,
                                                                     plural, body)
         logging.info(api_response)
-        return yaml.dump(api_response), 200
+        return execution_id, 200
 
     except ApiException as e:
         logging.error(
@@ -187,6 +187,31 @@ def stop_execution():
     return 'Successfully delete', 200
 
 
+@services.route('/info/<executionId>', methods=['GET'])
+def get_execution_info(executionId):
+    """
+    Get info for an execution id.
+    ---
+    tags:
+      - operation
+    consumes:
+      - application/json
+    parameters:
+      - name: executionId
+        in: path
+        description: Id of the execution.
+        required: true
+        type: string
+    """
+    try:
+        api_response = api_instance.get_namespaced_custom_object(group, version, namespace, plural, executionId)
+        logging.info(api_response)
+        return yaml.dump(api_response), 200
+    except ApiException as e:
+        logging.error(f'The executionId {executionId} is not registered in your namespace.')
+        return f'The executionId {executionId} is not registered in your namespace.', 400
+
+
 @services.route('/list', methods=['GET'])
 def list_executions():
     """
@@ -199,9 +224,11 @@ def list_executions():
     """
     try:
         api_response = api_instance.list_cluster_custom_object(group, version, plural)
-
+        result = list()
+        for i in api_response['items']:
+            result.append(i['metadata']['name'])
         logging.info(api_response)
-        return yaml.dump(api_response), 200
+        return jsonify(result), 200
 
     except ApiException as e:
         logging.error(
