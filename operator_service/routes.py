@@ -1,6 +1,7 @@
 import logging
 import uuid
 from configparser import ConfigParser
+from os import path
 
 import kubernetes
 import yaml
@@ -11,12 +12,16 @@ from kubernetes.client.rest import ApiException
 services = Blueprint('services', __name__)
 
 # Configuration to connect to k8s.
-config.load_kube_config()
+if not path.exists('/.dockerenv'):
+    config.load_kube_config()
+else:
+    config.load_incluster_config()
+
 # create an instance of the API class
 api_instance = client.CustomObjectsApi()
 
 config_parser = ConfigParser()
-configuration = config_parser.read('config.ini')
+configuration = config_parser.read('/operator-service/config.ini')
 group = config_parser.get('resources', 'group')  # str | The custom resource's group name
 version = config_parser.get('resources', 'version')  # str | The custom resource's version
 namespace = config_parser.get('resources', 'namespace')  # str | The custom resource's namespace
