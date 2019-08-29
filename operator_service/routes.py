@@ -62,83 +62,73 @@ def init_execution():
               example: {"@context": "https://w3id.org/future-method/v1",
                         "authentication": [],
                         "created": "2019-04-09T19:02:11Z",
-                        "id":
-                        "did:op:8d1b4d73e7af4634958f071ab8dfe7ab0df14019755e444090fd392c8ec9c3f4",
+                        "id": "did:op:bda17c126f5a411c8edd94cd0700e466a860f269a0324b77ae37d04cf84bb894",
                         "proof": {
-                            "created": "2019-04-09T19:02:11Z",
-                            "creator": "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e",
-                            "signatureValue":
-                            "1cd57300733bcbcda0beb59b3e076de6419c0d7674e7befb77820b53c79e3aa8f1776effc64cf088bad8cb694cc4d71ebd74a13b2f75893df5a53f3f318f6cf828",
-                            "type": "DDOIntegritySignature"
+                          "created": "2019-04-09T19:02:11Z",
+                          "creator": "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e",
+                          "signatureValue": "1cd57300733bcbcda0beb59b3e076de6419c0d7674e7befb77820b53c79e3aa8f1776effc64cf088bad8cb694cc4d71ebd74a13b2f75893df5a53f3f318f6cf828",
+                          "type": "DDOIntegritySignature"
                         },
-                        "publicKey": [{
-                            "id":
-                            "did:op:8d1b4d73e7af4634958f071ab8dfe7ab0df14019755e444090fd392c8ec9c3f4",
+                        "publicKey": [
+                          {
+                            "id": "did:op:60000f48357a42fbb8d6ff3a25a23413e9cc852db091485eb89506a5fed9f33c",
                             "owner": "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e",
                             "type": "EthereumECDSAKey"
-                        }],
-                        "service":[{
-                            "index" : 0,
-                            "serviceEndpoint":
-                            "http://172.15.0.15:5000/api/v1/aquarius/assets/ddo/did:op
-                            :8d1b4d73e7af4634958f071ab8dfe7ab0df14019755e444090fd392c8ec9c3f4",
-                            "type": "metadata",
+                          }
+                        ],
+                        "service": [
+                          {
+                            "index": "0",
+                            "serviceEndpoint": "https://brizo.nile.dev-ocean.com/api/v1/aquarius/assets/ddo/{did}",
+                            "type": "Metadata",
                             "attributes": {
-                                "main": {
-                                    "dateCreated": "2012-10-10T17:00:00Z",
-                                    "type": "workflow",
-                                    "datePublished": "2019-04-09T19:02:11Z",
-                                    "workflow": {
-                                        "stages": [{
-                                          "index": 0,
-                                          "stageType": "Filtering",
-                                          "requirements": {
-                                            "serverInstances": 1,
-                                            "container": {
-                                              "image": "tensorflow/tensorflow",
-                                              "tag": "latest",
-                                              "checksum":
-                                              "sha256:cb57ecfa6ebbefd8ffc7f75c0f00e57a7fa739578a429b6f72a0df19315deadc"
-                                            }
-                                          },
-                                          "input": [{
-                                            "index": 0,
-                                            "id": "did:op:12345"
-                                          }, {
-                                            "index": 1,
-                                            "id": "did:op:67890"
-                                          }
-                                          ],
-                                          "transformation": {
-                                            "id": "did:op:abcde"
-                                          },
-                                          "output": {}
-                                        }, {
-                                          "index": 1,
-                                          "stageType": "Transformation",
-                                          "requirements": {
-                                            "serverInstances": 1,
-                                            "container": {
-                                              "image": "tensorflow/tensorflow",
-                                              "tag": "latest",
-                                              "checksum":
-                                              "sha256:cb57ecfa6ebbefd8ffc7f75c0f00e57a7fa739578a429b6f72a0df19315deadc"
-                                            }
-                                          },
-                                          "input": [{
-                                            "index": 0,
-                                            "previousStage": 0
-                                          }],
-                                          "transformation": {
-                                            "id": "did:op:999999"
-                                          },
-                                          "output": {}
-                                        }]
+                              "main": {
+                                "dateCreated": "2012-10-10T17:00:00Z",
+                                "type": "workflow",
+                                "datePublished": "2019-04-09T19:02:11Z"
+                              },
+                              "workflow": {
+                                "stages": [
+                                  {
+                                    "index": 0,
+                                    "stageType": "Filtering",
+                                    "requirements": {
+                                      "serverInstances": 1,
+                                      "container": {
+                                        "image": "openjdk",
+                                        "tag": "14-jdk",
+                                        "checksum": "sha256:cb57ecfa6ebbefd8ffc7f75c0f00e57a7fa739578a429b6f72a0df19315deadc"
                                       }
-                                }}
-                                }
-                            ]
-                        }
+                                    },
+                                    "input": [
+                                      {
+                                        "index": 0,
+                                        "id": "did:op:c0ea298bcd5d4140a207655528ded5fb44620d9765f84f7096f27efcf0832afc"
+                                      },
+                                      {
+                                        "index": 1,
+                                        "id": "did:op:63301ee7ed4d4430b753f1b90d2f890103d9edf556814e268d34f58de800ac52"
+                                      }
+                                    ],
+                                    "transformation": {
+                                      "id": "did:op:49ce7de0056e4d829d9de8c1f78911f9be34645483354d9c899325de07343561"
+                                    },
+                                    "output": {
+                                      "metadataUrl": "https://aquarius.marketplace.dev-ocean.com",
+                                      "secretStoreUrl": "https://secret-store.nile.dev-ocean.com",
+                                      "accessProxyUrl": "https://brizo.marketplace.dev-ocean.com",
+                                      "brizoAddress": "0x4aaab179035dc57b35e2ce066919048686f82972",
+                                      "metadata": {
+                                        "name": "Workflow output"
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
 
     response:
       201:
@@ -236,7 +226,7 @@ def list_executions():
       - application/json
     """
     try:
-        api_response = api_instance.list_cluster_custom_object(group, version, plural)
+        api_response = api_instance.list_namespaced_custom_object(group, version, namespace, plural)
         result = list()
         for i in api_response['items']:
             result.append(i['metadata']['name'])
