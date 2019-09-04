@@ -266,6 +266,8 @@ def get_logs():
         description: Get correctly the logs
       400:
         description: Error consume Kubernetes API
+      404:
+        description: Pod not found for the given parameters
     """
     data = request.args
     required_attributes = [
@@ -281,11 +283,17 @@ def get_logs():
         label_selector = f'workflow={execution_id},component={component}'
         logging.error(f'label_selector: {label_selector}')
         pod_response = api_core.list_namespaced_pod(namespace, label_selector=label_selector)
-        pod_name = pod_response.items[0].metadata.name
     except ApiException as e:
         logging.error(
             f'Exception when calling CustomObjectsApi->list_namespaced_pod: {e}')
         return 'Error getting the logs', 400
+
+    try:
+        pod_name = pod_response.items[0].metadata.name
+    except IndexError as e:
+        logging.warning(f'Exception getting information about the pod with labels {label_selector}.'
+                        f' Probably pod does not exist')
+        return f'Pod with workflow={execution_id} and component={component} not found', 404
 
     try:
         logs_response = api_core.read_namespaced_pod_log(name=pod_name, namespace=namespace)
