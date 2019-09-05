@@ -258,7 +258,7 @@ def get_logs():
         type: string
       - name: component
         in: query
-        description: Workflow component (config, algorithm, publish)
+        description: Workflow component (configure, algorithm, publish)
         required: true
         type: string
     responses:
@@ -277,11 +277,9 @@ def get_logs():
     try:
         execution_id = data.get('executionId')
         component = data.get('component')
-        # logging.error(f'request:{request}')
-        # logging.error(f'data:{data}')
         # First we need to get the name of the pods
         label_selector = f'workflow={execution_id},component={component}'
-        logging.error(f'label_selector: {label_selector}')
+        logging.debug(f'Looking pods in ns {namespace} with labels {label_selector}')
         pod_response = api_core.list_namespaced_pod(namespace, label_selector=label_selector)
     except ApiException as e:
         logging.error(
@@ -290,12 +288,14 @@ def get_logs():
 
     try:
         pod_name = pod_response.items[0].metadata.name
+        logging.debug(f'pods found: {pod_response}')
     except IndexError as e:
         logging.warning(f'Exception getting information about the pod with labels {label_selector}.'
                         f' Probably pod does not exist')
         return f'Pod with workflow={execution_id} and component={component} not found', 404
 
     try:
+        logging.debug(f'looking logs for pod {pod_name} in namespace {namespace}')
         logs_response = api_core.read_namespaced_pod_log(name=pod_name, namespace=namespace)
         r = Response(response=logs_response, status=200, mimetype="text/plain")
         r.headers["Content-Type"] = "text/plain; charset=utf-8"
