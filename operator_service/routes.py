@@ -5,7 +5,7 @@ from os import path
 
 import kubernetes
 import yaml
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, Response
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 
@@ -17,8 +17,10 @@ if not path.exists('/.dockerenv'):
 else:
     config.load_incluster_config()
 
-# create an instance of the API class
-api_instance = client.CustomObjectsApi()
+# create instances of the API classes
+api_customobject = client.CustomObjectsApi()
+api_core = client.CoreV1Api()
+
 
 config_parser = ConfigParser()
 configuration = config_parser.read('/operator-service/config.ini')
@@ -139,8 +141,8 @@ def init_execution():
     execution_id = generate_new_id()
     body = create_execution(request.json['workflow'], execution_id)
     try:
-        api_response = api_instance.create_namespaced_custom_object(group, version, namespace,
-                                                                    plural, body)
+        api_response = api_customobject.create_namespaced_custom_object(group, version, namespace,
+                                                                        plural, body)
         logging.info(api_response)
         return execution_id, 200
 
@@ -178,11 +180,11 @@ def stop_execution():
     # resource-specific default policy. (optional)
 
     try:
-        api_response = api_instance.delete_namespaced_custom_object(group, version, namespace,
-                                                                    plural, name, body,
-                                                                    grace_period_seconds=grace_period_seconds,
-                                                                    orphan_dependents=orphan_dependents,
-                                                                    propagation_policy=propagation_policy)
+        api_response = api_customobject.delete_namespaced_custom_object(group, version, namespace,
+                                                                        plural, name, body,
+                                                                        grace_period_seconds=grace_period_seconds,
+                                                                        orphan_dependents=orphan_dependents,
+                                                                        propagation_policy=propagation_policy)
         logging.info(api_response)
     except ApiException as e:
         print("Exception when calling CustomObjectsApi->delete_namespaced_custom_object: %s\n" % e)
@@ -206,8 +208,8 @@ def get_execution_info(execution_id):
         type: string
     """
     try:
-        api_response = api_instance.get_namespaced_custom_object(group, version, namespace, plural,
-                                                                 execution_id)
+        api_response = api_customobject.get_namespaced_custom_object(group, version, namespace, plural,
+                                                                     execution_id)
         logging.info(api_response)
         return yaml.dump(api_response), 200
     except ApiException as e:
@@ -226,7 +228,7 @@ def list_executions():
       - application/json
     """
     try:
-        api_response = api_instance.list_namespaced_custom_object(group, version, namespace, plural)
+        api_response = api_customobject.list_namespaced_custom_object(group, version, namespace, plural)
         result = list()
         for i in api_response['items']:
             result.append(i['metadata']['name'])
@@ -237,6 +239,72 @@ def list_executions():
         logging.error(
             f'Exception when calling CustomObjectsApi->list_cluster_custom_object: {e}')
         return 'Error listing workflows', 400
+
+
+@services.route('/logs', methods=['GET'])
+def get_logs():
+    """
+    Get the logs for an execution id.
+    ---
+    tags:
+      - operation
+    consumes:
+      - text/plain
+    parameters:
+      - name: executionId
+        in: query
+        description: Id of the execution.
+        required: true
+        type: string
+      - name: component
+        in: query
+        description: Workflow component (configure, algorithm, publish)
+        required: true
+        type: string
+    responses:
+      200:
+        description: Get correctly the logs
+      400:
+        description: Error consume Kubernetes API
+      404:
+        description: Pod not found for the given parameters
+    """
+    data = request.args
+    required_attributes = [
+        'executionId',
+        'component'
+    ]
+    try:
+        execution_id = data.get('executionId')
+        component = data.get('component')
+        # First we need to get the name of the pods
+        label_selector = f'workflow={execution_id},component={component}'
+        logging.debug(f'Looking pods in ns {namespace} with labels {label_selector}')
+        pod_response = api_core.list_namespaced_pod(namespace, label_selector=label_selector)
+    except ApiException as e:
+        logging.error(
+            f'Exception when calling CustomObjectsApi->list_namespaced_pod: {e}')
+        return 'Error getting the logs', 400
+
+    try:
+        pod_name = pod_response.items[0].metadata.name
+        logging.debug(f'pods found: {pod_response}')
+    except IndexError as e:
+        logging.warning(f'Exception getting information about the pod with labels {label_selector}.'
+                        f' Probably pod does not exist')
+        return f'Pod with workflow={execution_id} and component={component} not found', 404
+
+    try:
+        logging.debug(f'looking logs for pod {pod_name} in namespace {namespace}')
+        logs_response = api_core.read_namespaced_pod_log(name=pod_name, namespace=namespace)
+        r = Response(response=logs_response, status=200, mimetype="text/plain")
+        r.headers["Content-Type"] = "text/plain; charset=utf-8"
+        return r
+
+    except ApiException as e:
+        logging.error(
+            f'Exception when calling CustomObjectsApi->read_namespaced_pod_log: {e}')
+        return 'Error getting the logs', 400
 
 
 def create_execution(workflow, execution_id):
