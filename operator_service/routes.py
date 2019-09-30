@@ -105,21 +105,21 @@ def init_execution():
                                     "input": [
                                       {
                                         "index": 0,
-                                        "id": "did:op:c0ea298bcd5d4140a207655528ded5fb44620d9765f84f7096f27efcf0832afc"
+                                        "id": "did:op:b06d19edca5b4b17b7ee0cdee9718d97a4790cc520234037b78d27b4169e7fc7"
                                       },
                                       {
                                         "index": 1,
-                                        "id": "did:op:63301ee7ed4d4430b753f1b90d2f890103d9edf556814e268d34f58de800ac52"
+                                        "id": "did:op:b06d19edca5b4b17b7ee0cdee9718d97a4790cc520234037b78d27b4169e7fc7"
                                       }
                                     ],
                                     "transformation": {
-                                      "id": "did:op:49ce7de0056e4d829d9de8c1f78911f9be34645483354d9c899325de07343561"
+                                      "id": "did:op:eee5a8ac40454b139b5cb1aceb425e7adfaa0b0742704a5d8041bde081b632ec"
                                     },
                                     "output": {
-                                      "metadataUrl": "https://aquarius.marketplace.dev-ocean.com",
-                                      "secretStoreUrl": "https://secret-store.nile.dev-ocean.com",
-                                      "accessProxyUrl": "https://brizo.marketplace.dev-ocean.com",
-                                      "brizoAddress": "0x4aaab179035dc57b35e2ce066919048686f82972",
+                                      "metadataUrl": "https://aquarius.compute.duero.dev-ocean.com",
+                                      "secretStoreUrl": "https://secret-store.duero.dev-ocean.com",
+                                      "accessProxyUrl": "https://brizo.compute.duero.dev-ocean.com",
+                                      "brizoAddress": "0xfEF2d5e1670342b9EF22eeeDcb287EC526B48095",
                                       "metadata": {
                                         "name": "Workflow output"
                                       }
