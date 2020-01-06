@@ -8,7 +8,7 @@ import yaml
 from flask import Blueprint, jsonify, request, Response
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
-
+import simplejson as json
 services = Blueprint('services', __name__)
 
 # Configuration to connect to k8s.
@@ -61,77 +61,59 @@ def init_execution():
             workflow:
               description: Workflow definition.
               type: dictionary
-              example: {"@context": "https://w3id.org/future-method/v1",
-                        "authentication": [],
-                        "created": "2019-04-09T19:02:11Z",
-                        "id": "did:op:bda17c126f5a411c8edd94cd0700e466a860f269a0324b77ae37d04cf84bb894",
-                        "proof": {
-                          "created": "2019-04-09T19:02:11Z",
-                          "creator": "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e",
-                          "signatureValue": "1cd57300733bcbcda0beb59b3e076de6419c0d7674e7befb77820b53c79e3aa8f1776effc64cf088bad8cb694cc4d71ebd74a13b2f75893df5a53f3f318f6cf828",
-                          "type": "DDOIntegritySignature"
-                        },
-                        "publicKey": [
+              example: {
+                  "workflow": {
+                      "stages": [
                           {
-                            "id": "did:op:60000f48357a42fbb8d6ff3a25a23413e9cc852db091485eb89506a5fed9f33c",
-                            "owner": "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e",
-                            "type": "EthereumECDSAKey"
-                          }
-                        ],
-                        "service": [
-                          {
-                            "index": "0",
-                            "serviceEndpoint": "https://brizo.nile.dev-ocean.com/api/v1/aquarius/assets/ddo/{did}",
-                            "type": "Metadata",
-                            "attributes": {
-                              "main": {
-                                "dateCreated": "2012-10-10T17:00:00Z",
-                                "type": "workflow",
-                                "datePublished": "2019-04-09T19:02:11Z"
-                              },
-                              "workflow": {
-                                "stages": [
-                                  {
-                                    "index": 0,
-                                    "stageType": "Filtering",
-                                    "requirements": {
-                                      "serverInstances": 1,
-                                      "container": {
-                                        "image": "openjdk",
-                                        "tag": "14-jdk",
-                                        "checksum": "sha256:cb57ecfa6ebbefd8ffc7f75c0f00e57a7fa739578a429b6f72a0df19315deadc"
-                                      }
-                                    },
-                                    "input": [
-                                      {
-                                        "index": 0,
-                                        "id": "did:op:b06d19edca5b4b17b7ee0cdee9718d97a4790cc520234037b78d27b4169e7fc7"
-                                      },
-                                      {
-                                        "index": 1,
-                                        "id": "did:op:b06d19edca5b4b17b7ee0cdee9718d97a4790cc520234037b78d27b4169e7fc7"
-                                      }
-                                    ],
-                                    "transformation": {
-                                      "id": "did:op:eee5a8ac40454b139b5cb1aceb425e7adfaa0b0742704a5d8041bde081b632ec"
-                                    },
-                                    "output": {
-                                      "metadataUrl": "https://aquarius.compute.duero.dev-ocean.com",
-                                      "secretStoreUrl": "https://secret-store.duero.dev-ocean.com",
-                                      "accessProxyUrl": "https://brizo.compute.duero.dev-ocean.com",
-                                      "brizoAddress": "0xfEF2d5e1670342b9EF22eeeDcb287EC526B48095",
-                                      "metadata": {
-                                        "name": "Workflow output"
-                                      }
-                                    }
+                            "index": 0,
+                            "input": [
+                                {
+                                  "id": "did:op:87bdaabb33354d2eb014af5091c604fb4b0f67dc6cca4d18a96547bffdc27bcf",
+                                  "agreementid": "0x111",
+                                  "url": [
+                                    "https://data.ok.gov/sites/default/files/unspsc%20codes_3.csv",
+                                    "https://gishubdata.nd.gov/sites/default/files/NDHUB.Roads_MileMarkers_1.csv"
+                                  ],
+                                  "index": 0
+                                },
+                                {
+                                  "id": "did:op:1384941e6f0b46299b6e515723df3d8e8e5d1fb175554467a1cb7bc613f5c72e",
+                                  "agreementid": "0x111",
+                                  "url": [
+                                    "https://data.ct.gov/api/views/2fi9-sgi3/rows.csv?accessType=DOWNLOAD"
+                                  ],
+                                  "index": 1
+                                }
+                            ],
+                            "compute": {
+                                "Instances": 1,
+                                "namespace": "withgpu",
+                                "maxtime": 3600
+                            },
+                            "algorithm": {
+                                  "id": "did:op:87bdaabb33354d2eb014af5091c604fb4b0f67dc6cca4d18a96547bffdc27bcf",
+                                  "agreementid": "0x111",
+                                  "url": "https://raw.githubusercontent.com/oceanprotocol/test-algorithm/master/javascript/algo.js",
+                                  "container": {
+                                      "image": "node",
+                                      "tag": "10",
+                                      "entrypoint": "node $ALGO"
                                   }
-                                ]
-                              }
+                            },
+                            "output": {
+                                "brizoUrl": "https://brizo.marketplace.dev-ocean.com",
+                                "brizoAddress": "0x4aaab179035dc57b35e2ce066919048686f82972",
+                                "metadata": {
+                                    "name": "Workflow output"
+                                },
+                                "metadataUrl": "https://aquarius.marketplace.dev-ocean.com",
+                                "secretStoreUrl": "https://secret-store.nile.dev-ocean.com",
+                                "owner": "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e"
                             }
-                          }
-                        ]
-                      }
-
+                        }
+                    ]
+                    }
+                    }
     response:
       201:
         description: Workflow inited successfully.
@@ -139,7 +121,9 @@ def init_execution():
         description: Some error
     """
     execution_id = generate_new_id()
+    logging.error(f'Got execution_id: {execution_id}')
     body = create_execution(request.json['workflow'], execution_id)
+    logging.error(f'Got body: {body}')
     try:
         api_response = api_customobject.create_namespaced_custom_object(group, version, namespace,
                                                                         plural, body)

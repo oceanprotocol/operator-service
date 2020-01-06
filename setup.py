@@ -25,6 +25,7 @@ install_requirements = [
     'gunicorn==19.9.0',
     'PyYAML==5.1',
     'pytz==2018.5',
+    'simplejson>=3.13.2',
 ]
 
 setup_requirements = ['pytest-runner==2.11.1', ]

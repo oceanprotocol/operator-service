@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -25,9 +25,7 @@ spec:
     spec:
       containers:
       - env:
-        - name: REACT_APP_BRIZO_ADDRESS
-          value: 0x008c25ed3594e094db4592f4115d5fa74c4f41ea
-        image: oceanprotocol/operator-service:test
+        image: alexdevel:5000/operator-service:latest
         imagePullPolicy: Always
         name: operator-api
         ports:
@@ -37,8 +35,6 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
       dnsPolicy: ClusterFirst
-      nodeSelector:
-        environment: production
       restartPolicy: Always
       serviceAccount: operator-service
       serviceAccountName: operator-service
