@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - env:
-        image: alexdevel:5000/operator-service:latest
+        image: oceanprotocol/operator-service:latest
         imagePullPolicy: Always
         name: operator-api
         ports:
