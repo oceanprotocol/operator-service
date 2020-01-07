@@ -51,13 +51,8 @@ def init_execution():
         schema:
           type: object
           required:
-            - serviceAgreementId
             - workflow
           properties:
-            serviceAgreementId:
-              description: Identifier of the service agreement.
-              type: string
-              example: 'bb23s87856d59867503f80a690357406857698570b964ac8dcc9d86da4ada010'
             workflow:
               description: Workflow definition.
               type: dictionary
