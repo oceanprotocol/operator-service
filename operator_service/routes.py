@@ -170,8 +170,8 @@ def stop_execution():
     return 'Successfully delete', 200
 
 
-@services.route('/info/<execution_id>', methods=['GET'])
-def get_execution_info(execution_id):
+@services.route('/info', methods=['GET'])
+def get_execution_info():
     """
     Get info for an execution id.
     ---
@@ -181,16 +181,17 @@ def get_execution_info(execution_id):
       - application/json
     parameters:
       - name: executionId
-        in: path
+        in: query
         description: Id of the execution.
         required: true
         type: string
     """
     try:
+        execution_id = request.args['executionId']
         api_response = api_customobject.get_namespaced_custom_object(group, version, namespace, plural,
                                                                      execution_id)
         logging.info(api_response)
-        return yaml.dump(api_response), 200
+        return jsonify(api_response), 200
     except ApiException as e:
         logging.error(f'The executionId {execution_id} is not registered in your namespace.')
         return f'The executionId {execution_id} is not registered in your namespace.', 400
