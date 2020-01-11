@@ -4,6 +4,8 @@ from configparser import ConfigParser
 from os import path
 
 import kubernetes
+import os
+import psycopg2
 import yaml
 from flask import Blueprint, jsonify, request, Response
 from kubernetes import client, config
@@ -28,11 +30,130 @@ group = config_parser.get('resources', 'group')  # str | The custom resource's g
 version = config_parser.get('resources', 'version')  # str | The custom resource's version
 namespace = config_parser.get('resources', 'namespace')  # str | The custom resource's namespace
 plural = config_parser.get('resources',
-                           'plural')  # str | The custom resource's plural name. For TPRs this
+                           'plural')  # str | The custom resource's plural name. For TPRs this would be
+
+def create_sql_job(agreementId,execution_id,owner):
+    try:
+      connection = psycopg2.connect(user = os.getenv("POSTGRES_USER"),
+                                  password = os.getenv("POSTGRES_PASSWORD"),
+                                  host = os.getenv("POSTGRES_HOST"),
+                                  port = os.getenv("POSTGRES_PORT"),
+                                  database = os.getenv("POSTGRES_DB"))
+      cursor = connection.cursor()
+
+      postgres_insert_query = """ INSERT INTO jobs (agreementId,workflowId,owner,status,statusText) VALUES (%s,%s,%s,%s,%s)"""
+      record_to_insert = (agreementId,execution_id, owner,1,"Job started")
+      cursor.execute(postgres_insert_query, record_to_insert)
+      connection.commit()
+    except (Exception, psycopg2.Error) as error :
+      output = output + "Error PostgreSQL:"+str(error)
+    finally:
+    #closing database connection.
+        if(connection):
+            cursor.close()
+            connection.close()
 
 
-# would be
+def get_sql_status(agreementId,jobId,owner):
+  result = []
+  logging.error("Start get_sql_status\n")
+  try:
+      connection = psycopg2.connect(user = os.getenv("POSTGRES_USER"),
+                                  password = os.getenv("POSTGRES_PASSWORD"),
+                                  host = os.getenv("POSTGRES_HOST"),
+                                  port = os.getenv("POSTGRES_PORT"),
+                                  database = os.getenv("POSTGRES_DB"))
+      cursor = connection.cursor()
+      logging.error("Connected\n")
+      params=dict()
+      select_query="SELECT agreementId,workflowId,owner,status,statusText,extract(epoch from dateCreated) as dateCreated,extract(epoch from dateFinished) as dateFinished,configlogURL,publishlogURL,algologURL,outputsURL,ddo FROM jobs WHERE 1=1"
+      if agreementId is not None:
+        select_query=select_query+" AND agreementId=%(agreementId)s"
+        params['agreementId']=agreementId
+      if jobId is not None:
+        select_query=select_query+" AND workflowId=%(jobId)s"
+        params['jobId']=jobId
+      if owner is not None:
+        select_query=select_query+" AND owner=%(owner)s"
+        params['owner']=owner   
+      logging.error(f'Got select_query: {select_query}')
+      logging.error(f'Got params: {params}')
+      cursor.execute(select_query, params)
+      temprow=dict()
+      while True:
+        row = cursor.fetchone()
+        if row == None:
+            break
+        temprow['agreementId']=row[0]
+        temprow['jobId']=row[1]
+        temprow['owner']=row[2]
+        temprow['status']=row[3]
+        temprow['statusText']=row[4]
+        temprow['dateCreated']=row[5]
+        temprow['dateFinished']=row[6]
+        temprow['configlogURL']=row[7]
+        temprow['publishlogURL']=row[8]
+        temprow['algologURL']=row[9]
+        temprow['outputsURL']=row[10]
+        temprow['ddo']=row[11]
+        result.append(temprow)
+  except (Exception, psycopg2.Error) as error :
+        result=dict()
+        logging.error(f'Got PG error: {error}')
+  finally:
+    #closing database connection.
+        if(connection):
+            cursor.close()
+            connection.close()
+        logging.error('Done')
+  return result
 
+
+@services.route('/pgsqlinit', methods=['POST'])
+def init_pgsqlexecution():
+    """
+    Init pgsql database
+    ---
+    tags:
+      - operation
+    consumes:
+      - application/json
+    """
+    output = ""
+    try:
+      connection = psycopg2.connect(user = os.getenv("POSTGRES_USER"),
+                                  password = os.getenv("POSTGRES_PASSWORD"),
+                                  host = os.getenv("POSTGRES_HOST"),
+                                  port = os.getenv("POSTGRES_PORT"),
+                                  database = os.getenv("POSTGRES_DB"))
+      cursor = connection.cursor()
+      create_table_query = '''CREATE TABLE jobs
+          (agreementId           varchar(255) NOT NULL,
+          workflowId         varchar(255) NOT NULL,
+          owner         varchar(255),
+          status  int,
+          statusText varchar(255),
+          dateCreated timestamp without time zone default NOW(),
+          dateFinished timestamp without time zone default NULL,
+          configlogURL text,
+          publishlogURL text,
+          algologURL text,
+          outputsURL text,
+          ddo text
+          ); '''
+      cursor.execute(create_table_query)
+      create_index_query = '''CREATE unique INDEX uniq_agreementId_workflowId ON jobs (agreementId,workflowId)'''
+      cursor.execute(create_index_query)
+      connection.commit()
+    except (Exception, psycopg2.Error) as error :
+      output = output + "Error PostgreSQL:"+str(error)
+    finally:
+    #closing database connection.
+        if(connection):
+            cursor.close()
+            connection.close()
+    
+    return output, 200
 
 @services.route('/init', methods=['POST'])
 def init_execution():
@@ -57,9 +178,10 @@ def init_execution():
               description: Workflow definition.
               type: dictionary
               example: {
-                  "workflow": {
-                      "stages": [
-                          {
+                          "agreementId":"1111",
+                          "owner":"0xC41808BBef371AD5CFc76466dDF9dEe228d2BdAA",
+                          "stages": [
+                            {
                             "index": 0,
                             "input": [
                                 {
@@ -103,18 +225,38 @@ def init_execution():
                                 },
                                 "metadataUrl": "https://aquarius.marketplace.dev-ocean.com",
                                 "secretStoreUrl": "https://secret-store.nile.dev-ocean.com",
-                                "owner": "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e"
+                                "whitelist": [
+                                    "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e",
+                                    "0xACBd138aBD70e2F00903268F3Db08f2D25677C9e"
+                                ]
                             }
-                        }
-                    ]
-                    }
-                    }
+                          }
+                        ]
+                      }
     response:
       201:
         description: Workflow inited successfully.
       400:
         description: Some error
     """
+    if 'workflow' not in request.json:
+        logging.error(
+            f'Missing workflow')
+        return 'Missing workflow', 400
+    if 'agreementId' not in request.json['workflow']:
+        logging.error(
+            f'Missing agreementId')
+        return 'Missing agreementId', 400
+    if 'owner' not in request.json['workflow']:
+        logging.error(
+            f'Missing ownerId')
+        return 'Missing ownerId', 400
+    if 'stages' not in request.json['workflow']:
+        logging.error(
+            f'Missing stages')
+        return 'Missing stages', 400        
+    agreementId=request.json['workflow']['agreementId']
+    owner=request.json['workflow']['owner']
     execution_id = generate_new_id()
     logging.error(f'Got execution_id: {execution_id}')
     body = create_execution(request.json['workflow'], execution_id)
@@ -123,6 +265,7 @@ def init_execution():
         api_response = api_customobject.create_namespaced_custom_object(group, version, namespace,
                                                                         plural, body)
         logging.info(api_response)
+        create_sql_job(agreementId,execution_id,owner)
         return execution_id, 200
 
     except ApiException as e:
@@ -142,6 +285,10 @@ def stop_execution():
       - application/json
     parameters:
       - name: executionId
+        in: query
+        description: Id of the execution.
+        required: true
+        type: string
     """
     name = request.args['executionId']  # str | the custom object's name
     body = kubernetes.client.V1DeleteOptions()  # V1DeleteOptions |
@@ -168,6 +315,7 @@ def stop_execution():
     except ApiException as e:
         print("Exception when calling CustomObjectsApi->delete_namespaced_custom_object: %s\n" % e)
     return 'Successfully delete', 200
+
 
 
 @services.route('/info', methods=['GET'])
@@ -285,6 +433,62 @@ def get_logs():
         logging.error(
             f'Exception when calling CustomObjectsApi->read_namespaced_pod_log: {e}')
         return 'Error getting the logs', 400
+
+
+@services.route('/status', methods=['GET'])
+def get_execution_status():
+    """
+    Get info for an execution id.
+    ---
+    tags:
+      - operation
+    consumes:
+      - application/json
+    parameters:
+      - name: agreementId
+        in: query
+        description: agreementId
+        type: string
+      - name: jobId
+        in: query
+        description: Id of the execution.
+        type: string
+      - name: owner
+        in: query
+        description: owner
+        type: string
+    responses:
+      200:
+        description: Get correctly the logs
+      400:
+        description: Error consume Kubernetes API
+    """
+    try:
+      if 'agreementId' not in request.args:
+        agreementId = None
+      else:
+        agreementId = request.args['agreementId']
+      if 'jobId' not in request.args:
+        jobId = None
+      else:
+        jobId = request.args['jobId']
+      if 'owner' not in request.args:
+        owner = None
+      else:
+        owner = request.args['owner']
+      if owner is None and agreementId is None and jobId is None:
+        logging.error(f'All args are null ?')
+        return f'You have to specify one of agreementId,jobId or owner', 400    
+      else:
+        logging.error("Try to start")
+        api_response = get_sql_status(agreementId,jobId,owner)
+        logging.error(f'Got from sql: {api_response}')
+        return jsonify(api_response), 200
+    except ApiException as e:
+        logging.error(
+            f'Exception when calling status: {e}')
+        return 'Error getting the status', 400
+    
 
 
 def create_execution(workflow, execution_id):
