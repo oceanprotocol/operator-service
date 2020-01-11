@@ -284,13 +284,13 @@ def stop_execution():
     consumes:
       - application/json
     parameters:
-      - name: executionId
+      - name: jobId
         in: query
         description: Id of the execution.
         required: true
         type: string
     """
-    name = request.args['executionId']  # str | the custom object's name
+    name = request.args['jobId']  # str | the custom object's name
     body = kubernetes.client.V1DeleteOptions()  # V1DeleteOptions |
     grace_period_seconds = 56  # int | The duration in seconds before the object should be
     # deleted. Value must be non-negative integer. The value zero indicates delete immediately.
@@ -328,14 +328,14 @@ def get_execution_info():
     consumes:
       - application/json
     parameters:
-      - name: executionId
+      - name: jobId
         in: query
         description: Id of the execution.
         required: true
         type: string
     """
     try:
-        execution_id = request.args['executionId']
+        execution_id = request.args['jobId']
         api_response = api_customobject.get_namespaced_custom_object(group, version, namespace, plural,
                                                                      execution_id)
         logging.info(api_response)
@@ -379,7 +379,7 @@ def get_logs():
     consumes:
       - text/plain
     parameters:
-      - name: executionId
+      - name: jobId
         in: query
         description: Id of the execution.
         required: true
@@ -399,11 +399,11 @@ def get_logs():
     """
     data = request.args
     required_attributes = [
-        'executionId',
+        'jobId',
         'component'
     ]
     try:
-        execution_id = data.get('executionId')
+        execution_id = data.get('jobId')
         component = data.get('component')
         # First we need to get the name of the pods
         label_selector = f'workflow={execution_id},component={component}'
