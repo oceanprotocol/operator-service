@@ -14,6 +14,7 @@ RUN apk add --no-cache --update\
     py-pip \
     python3 \
     python3-dev \
+    postgresql-dev \
   && pip install virtualenv
 
 COPY . /operator-service

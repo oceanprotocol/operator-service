@@ -4,11 +4,13 @@ from configparser import ConfigParser
 from os import path
 
 import kubernetes
+import os
+import psycopg2
 import yaml
 from flask import Blueprint, jsonify, request, Response
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
-
+import simplejson as json
 services = Blueprint('services', __name__)
 
 # Configuration to connect to k8s.
@@ -28,11 +30,130 @@ group = config_parser.get('resources', 'group')  # str | The custom resource's g
 version = config_parser.get('resources', 'version')  # str | The custom resource's version
 namespace = config_parser.get('resources', 'namespace')  # str | The custom resource's namespace
 plural = config_parser.get('resources',
-                           'plural')  # str | The custom resource's plural name. For TPRs this
+                           'plural')  # str | The custom resource's plural name. For TPRs this would be
+
+def create_sql_job(agreementId,execution_id,owner):
+    try:
+      connection = psycopg2.connect(user = os.getenv("POSTGRES_USER"),
+                                  password = os.getenv("POSTGRES_PASSWORD"),
+                                  host = os.getenv("POSTGRES_HOST"),
+                                  port = os.getenv("POSTGRES_PORT"),
+                                  database = os.getenv("POSTGRES_DB"))
+      cursor = connection.cursor()
+
+      postgres_insert_query = """ INSERT INTO jobs (agreementId,workflowId,owner,status,statusText) VALUES (%s,%s,%s,%s,%s)"""
+      record_to_insert = (agreementId,execution_id, owner,1,"Job started")
+      cursor.execute(postgres_insert_query, record_to_insert)
+      connection.commit()
+    except (Exception, psycopg2.Error) as error :
+      output = output + "Error PostgreSQL:"+str(error)
+    finally:
+    #closing database connection.
+        if(connection):
+            cursor.close()
+            connection.close()
 
 
-# would be
+def get_sql_status(agreementId,jobId,owner):
+  result = []
+  logging.error("Start get_sql_status\n")
+  try:
+      connection = psycopg2.connect(user = os.getenv("POSTGRES_USER"),
+                                  password = os.getenv("POSTGRES_PASSWORD"),
+                                  host = os.getenv("POSTGRES_HOST"),
+                                  port = os.getenv("POSTGRES_PORT"),
+                                  database = os.getenv("POSTGRES_DB"))
+      cursor = connection.cursor()
+      logging.error("Connected\n")
+      params=dict()
+      select_query="SELECT agreementId,workflowId,owner,status,statusText,extract(epoch from dateCreated) as dateCreated,extract(epoch from dateFinished) as dateFinished,configlogURL,publishlogURL,algologURL,outputsURL,ddo FROM jobs WHERE 1=1"
+      if agreementId is not None:
+        select_query=select_query+" AND agreementId=%(agreementId)s"
+        params['agreementId']=agreementId
+      if jobId is not None:
+        select_query=select_query+" AND workflowId=%(jobId)s"
+        params['jobId']=jobId
+      if owner is not None:
+        select_query=select_query+" AND owner=%(owner)s"
+        params['owner']=owner   
+      logging.error(f'Got select_query: {select_query}')
+      logging.error(f'Got params: {params}')
+      cursor.execute(select_query, params)
+      temprow=dict()
+      while True:
+        row = cursor.fetchone()
+        if row == None:
+            break
+        temprow['agreementId']=row[0]
+        temprow['jobId']=row[1]
+        temprow['owner']=row[2]
+        temprow['status']=row[3]
+        temprow['statusText']=row[4]
+        temprow['dateCreated']=row[5]
+        temprow['dateFinished']=row[6]
+        temprow['configlogURL']=row[7]
+        temprow['publishlogURL']=row[8]
+        temprow['algologURL']=row[9]
+        temprow['outputsURL']=row[10]
+        temprow['ddo']=row[11]
+        result.append(temprow)
+  except (Exception, psycopg2.Error) as error :
+        result=dict()
+        logging.error(f'Got PG error: {error}')
+  finally:
+    #closing database connection.
+        if(connection):
+            cursor.close()
+            connection.close()
+        logging.error('Done')
+  return result
 
+
+@services.route('/pgsqlinit', methods=['POST'])
+def init_pgsqlexecution():
+    """
+    Init pgsql database
+    ---
+    tags:
+      - operation
+    consumes:
+      - application/json
+    """
+    output = ""
+    try:
+      connection = psycopg2.connect(user = os.getenv("POSTGRES_USER"),
+                                  password = os.getenv("POSTGRES_PASSWORD"),
+                                  host = os.getenv("POSTGRES_HOST"),
+                                  port = os.getenv("POSTGRES_PORT"),
+                                  database = os.getenv("POSTGRES_DB"))
+      cursor = connection.cursor()
+      create_table_query = '''CREATE TABLE jobs
+          (agreementId           varchar(255) NOT NULL,
+          workflowId         varchar(255) NOT NULL,
+          owner         varchar(255),
+          status  int,
+          statusText varchar(255),
+          dateCreated timestamp without time zone default NOW(),
+          dateFinished timestamp without time zone default NULL,
+          configlogURL text,
+          publishlogURL text,
+          algologURL text,
+          outputsURL text,
+          ddo text
+          ); '''
+      cursor.execute(create_table_query)
+      create_index_query = '''CREATE unique INDEX uniq_agreementId_workflowId ON jobs (agreementId,workflowId)'''
+      cursor.execute(create_index_query)
+      connection.commit()
+    except (Exception, psycopg2.Error) as error :
+      output = output + "Error PostgreSQL:"+str(error)
+    finally:
+    #closing database connection.
+        if(connection):
+            cursor.close()
+            connection.close()
+    
+    return output, 200
 
 @services.route('/init', methods=['POST'])
 def init_execution():
@@ -51,99 +172,100 @@ def init_execution():
         schema:
           type: object
           required:
-            - serviceAgreementId
             - workflow
           properties:
-            serviceAgreementId:
-              description: Identifier of the service agreement.
-              type: string
-              example: 'bb23s87856d59867503f80a690357406857698570b964ac8dcc9d86da4ada010'
             workflow:
               description: Workflow definition.
               type: dictionary
-              example: {"@context": "https://w3id.org/future-method/v1",
-                        "authentication": [],
-                        "created": "2019-04-09T19:02:11Z",
-                        "id": "did:op:bda17c126f5a411c8edd94cd0700e466a860f269a0324b77ae37d04cf84bb894",
-                        "proof": {
-                          "created": "2019-04-09T19:02:11Z",
-                          "creator": "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e",
-                          "signatureValue": "1cd57300733bcbcda0beb59b3e076de6419c0d7674e7befb77820b53c79e3aa8f1776effc64cf088bad8cb694cc4d71ebd74a13b2f75893df5a53f3f318f6cf828",
-                          "type": "DDOIntegritySignature"
-                        },
-                        "publicKey": [
-                          {
-                            "id": "did:op:60000f48357a42fbb8d6ff3a25a23413e9cc852db091485eb89506a5fed9f33c",
-                            "owner": "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e",
-                            "type": "EthereumECDSAKey"
-                          }
-                        ],
-                        "service": [
-                          {
-                            "index": "0",
-                            "serviceEndpoint": "https://brizo.nile.dev-ocean.com/api/v1/aquarius/assets/ddo/{did}",
-                            "type": "Metadata",
-                            "attributes": {
-                              "main": {
-                                "dateCreated": "2012-10-10T17:00:00Z",
-                                "type": "workflow",
-                                "datePublished": "2019-04-09T19:02:11Z"
-                              },
-                              "workflow": {
-                                "stages": [
-                                  {
-                                    "index": 0,
-                                    "stageType": "Filtering",
-                                    "requirements": {
-                                      "serverInstances": 1,
-                                      "container": {
-                                        "image": "openjdk",
-                                        "tag": "14-jdk",
-                                        "checksum": "sha256:cb57ecfa6ebbefd8ffc7f75c0f00e57a7fa739578a429b6f72a0df19315deadc"
-                                      }
-                                    },
-                                    "input": [
-                                      {
-                                        "index": 0,
-                                        "id": "did:op:b06d19edca5b4b17b7ee0cdee9718d97a4790cc520234037b78d27b4169e7fc7"
-                                      },
-                                      {
-                                        "index": 1,
-                                        "id": "did:op:b06d19edca5b4b17b7ee0cdee9718d97a4790cc520234037b78d27b4169e7fc7"
-                                      }
-                                    ],
-                                    "transformation": {
-                                      "id": "did:op:eee5a8ac40454b139b5cb1aceb425e7adfaa0b0742704a5d8041bde081b632ec"
-                                    },
-                                    "output": {
-                                      "metadataUrl": "https://aquarius.compute.duero.dev-ocean.com",
-                                      "secretStoreUrl": "https://secret-store.duero.dev-ocean.com",
-                                      "accessProxyUrl": "https://brizo.compute.duero.dev-ocean.com",
-                                      "brizoAddress": "0xfEF2d5e1670342b9EF22eeeDcb287EC526B48095",
-                                      "metadata": {
-                                        "name": "Workflow output"
-                                      }
-                                    }
+              example: {
+                          "agreementId":"1111",
+                          "owner":"0xC41808BBef371AD5CFc76466dDF9dEe228d2BdAA",
+                          "stages": [
+                            {
+                            "index": 0,
+                            "input": [
+                                {
+                                  "id": "did:op:87bdaabb33354d2eb014af5091c604fb4b0f67dc6cca4d18a96547bffdc27bcf",
+                                  "agreementid": "0x111",
+                                  "url": [
+                                    "https://data.ok.gov/sites/default/files/unspsc%20codes_3.csv",
+                                    "https://gishubdata.nd.gov/sites/default/files/NDHUB.Roads_MileMarkers_1.csv"
+                                  ],
+                                  "index": 0
+                                },
+                                {
+                                  "id": "did:op:1384941e6f0b46299b6e515723df3d8e8e5d1fb175554467a1cb7bc613f5c72e",
+                                  "agreementid": "0x111",
+                                  "url": [
+                                    "https://data.ct.gov/api/views/2fi9-sgi3/rows.csv?accessType=DOWNLOAD"
+                                  ],
+                                  "index": 1
+                                }
+                            ],
+                            "compute": {
+                                "Instances": 1,
+                                "namespace": "withgpu",
+                                "maxtime": 3600
+                            },
+                            "algorithm": {
+                                  "id": "did:op:87bdaabb33354d2eb014af5091c604fb4b0f67dc6cca4d18a96547bffdc27bcf",
+                                  "agreementid": "0x111",
+                                  "url": "https://raw.githubusercontent.com/oceanprotocol/test-algorithm/master/javascript/algo.js",
+                                  "container": {
+                                      "image": "node",
+                                      "tag": "10",
+                                      "entrypoint": "node $ALGO"
                                   }
+                            },
+                            "output": {
+                                "brizoUrl": "https://brizo.marketplace.dev-ocean.com",
+                                "brizoAddress": "0x4aaab179035dc57b35e2ce066919048686f82972",
+                                "metadata": {
+                                    "name": "Workflow output"
+                                },
+                                "metadataUrl": "https://aquarius.marketplace.dev-ocean.com",
+                                "secretStoreUrl": "https://secret-store.nile.dev-ocean.com",
+                                "whitelist": [
+                                    "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e",
+                                    "0xACBd138aBD70e2F00903268F3Db08f2D25677C9e"
                                 ]
-                              }
                             }
                           }
                         ]
                       }
-
     response:
       201:
         description: Workflow inited successfully.
       400:
         description: Some error
     """
+    if 'workflow' not in request.json:
+        logging.error(
+            f'Missing workflow')
+        return 'Missing workflow', 400
+    if 'agreementId' not in request.json['workflow']:
+        logging.error(
+            f'Missing agreementId')
+        return 'Missing agreementId', 400
+    if 'owner' not in request.json['workflow']:
+        logging.error(
+            f'Missing ownerId')
+        return 'Missing ownerId', 400
+    if 'stages' not in request.json['workflow']:
+        logging.error(
+            f'Missing stages')
+        return 'Missing stages', 400        
+    agreementId=request.json['workflow']['agreementId']
+    owner=request.json['workflow']['owner']
     execution_id = generate_new_id()
+    logging.error(f'Got execution_id: {execution_id}')
     body = create_execution(request.json['workflow'], execution_id)
+    logging.error(f'Got body: {body}')
     try:
         api_response = api_customobject.create_namespaced_custom_object(group, version, namespace,
                                                                         plural, body)
         logging.info(api_response)
+        create_sql_job(agreementId,execution_id,owner)
         return execution_id, 200
 
     except ApiException as e:
@@ -162,9 +284,13 @@ def stop_execution():
     consumes:
       - application/json
     parameters:
-      - name: executionId
+      - name: jobId
+        in: query
+        description: Id of the execution.
+        required: true
+        type: string
     """
-    name = request.args['executionId']  # str | the custom object's name
+    name = request.args['jobId']  # str | the custom object's name
     body = kubernetes.client.V1DeleteOptions()  # V1DeleteOptions |
     grace_period_seconds = 56  # int | The duration in seconds before the object should be
     # deleted. Value must be non-negative integer. The value zero indicates delete immediately.
@@ -191,8 +317,9 @@ def stop_execution():
     return 'Successfully delete', 200
 
 
-@services.route('/info/<execution_id>', methods=['GET'])
-def get_execution_info(execution_id):
+
+@services.route('/info', methods=['GET'])
+def get_execution_info():
     """
     Get info for an execution id.
     ---
@@ -201,17 +328,18 @@ def get_execution_info(execution_id):
     consumes:
       - application/json
     parameters:
-      - name: executionId
-        in: path
+      - name: jobId
+        in: query
         description: Id of the execution.
         required: true
         type: string
     """
     try:
+        execution_id = request.args['jobId']
         api_response = api_customobject.get_namespaced_custom_object(group, version, namespace, plural,
                                                                      execution_id)
         logging.info(api_response)
-        return yaml.dump(api_response), 200
+        return jsonify(api_response), 200
     except ApiException as e:
         logging.error(f'The executionId {execution_id} is not registered in your namespace.')
         return f'The executionId {execution_id} is not registered in your namespace.', 400
@@ -251,7 +379,7 @@ def get_logs():
     consumes:
       - text/plain
     parameters:
-      - name: executionId
+      - name: jobId
         in: query
         description: Id of the execution.
         required: true
@@ -271,11 +399,11 @@ def get_logs():
     """
     data = request.args
     required_attributes = [
-        'executionId',
+        'jobId',
         'component'
     ]
     try:
-        execution_id = data.get('executionId')
+        execution_id = data.get('jobId')
         component = data.get('component')
         # First we need to get the name of the pods
         label_selector = f'workflow={execution_id},component={component}'
@@ -305,6 +433,62 @@ def get_logs():
         logging.error(
             f'Exception when calling CustomObjectsApi->read_namespaced_pod_log: {e}')
         return 'Error getting the logs', 400
+
+
+@services.route('/status', methods=['GET'])
+def get_execution_status():
+    """
+    Get info for an execution id.
+    ---
+    tags:
+      - operation
+    consumes:
+      - application/json
+    parameters:
+      - name: agreementId
+        in: query
+        description: agreementId
+        type: string
+      - name: jobId
+        in: query
+        description: Id of the execution.
+        type: string
+      - name: owner
+        in: query
+        description: owner
+        type: string
+    responses:
+      200:
+        description: Get correctly the logs
+      400:
+        description: Error consume Kubernetes API
+    """
+    try:
+      if 'agreementId' not in request.args:
+        agreementId = None
+      else:
+        agreementId = request.args['agreementId']
+      if 'jobId' not in request.args:
+        jobId = None
+      else:
+        jobId = request.args['jobId']
+      if 'owner' not in request.args:
+        owner = None
+      else:
+        owner = request.args['owner']
+      if owner is None and agreementId is None and jobId is None:
+        logging.error(f'All args are null ?')
+        return f'You have to specify one of agreementId,jobId or owner', 400    
+      else:
+        logging.error("Try to start")
+        api_response = get_sql_status(agreementId,jobId,owner)
+        logging.error(f'Got from sql: {api_response}')
+        return jsonify(api_response), 200
+    except ApiException as e:
+        logging.error(
+            f'Exception when calling status: {e}')
+        return 'Error getting the status', 400
+    
 
 
 def create_execution(workflow, execution_id):

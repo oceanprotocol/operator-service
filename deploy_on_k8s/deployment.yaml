@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -25,9 +25,32 @@ spec:
     spec:
       containers:
       - env:
-        - name: REACT_APP_BRIZO_ADDRESS
-          value: 0x008c25ed3594e094db4592f4115d5fa74c4f41ea
-        image: oceanprotocol/operator-service:test
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DB
+              name: postgres-config
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_USER
+              name: postgres-config
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_PASSWORD
+              name: postgres-config
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_HOST
+              name: postgres-config
+        - name: POSTGRES_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_PORT
+              name: postgres-config
+        image: oceanprotocol/operator-service:latest
         imagePullPolicy: Always
         name: operator-api
         ports:
@@ -37,8 +60,6 @@ spec:
         terminationMessagePath: /dev/termination-log
         terminationMessagePolicy: File
       dnsPolicy: ClusterFirst
-      nodeSelector:
-        environment: production
       restartPolicy: Always
       serviceAccount: operator-service
       serviceAccountName: operator-service
