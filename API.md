@@ -108,7 +108,7 @@ Each object will contain:
         statusText: String, see below
         configlogURL: URL to get the configuration log (for admins only)
         publishlogURL: URL to get the publish log (for admins only)
-        algologURL: URL to get the algo log (for user)
+        algoLogURL: URL to get the algo log (for user)
         outputsURL: Array of URLs for algo outputs
 ```
 
@@ -116,12 +116,14 @@ Status description:
 
 | status   | Description        |
 |----------|--------------------|
-|  1       | Job started        |
-|  2       | Configuring volumes|
-|  3       | Running algorith   |
-|  4       | Filtering results  |
-|  5       | Publishing results |
-|  6       | Job completed      |
+|  10       | Job started        |
+|  20       | Configuring volumes|
+|  30       | Configuration failed | 
+|  40       | Running algorith   |
+|  50       | Filtering results  |
+|  60       | Filtering failed  |
+|  70       | Publishing results |
+|  80       | Job completed      |
 
 
 Example:
@@ -142,7 +144,7 @@ Output:
         "statusText":"Job finished",
         "configlogURL":"http://example.net/logs/config.log",
         "publishlogURL":"http://example.net/logs/publish.log",
-        "algologURL":"http://example.net/logs/algo.log",
+        "algoLogURL":"http://example.net/logs/algo.log",
         "outputsURL":[
             {
             "http://example.net/logs/output/0",
@@ -160,7 +162,7 @@ Output:
         "statusText":"Job finished",
         "configlogURL":"http://example.net/logs2/config.log",
         "publishlogURL":"http://example.net/logs2/cpublish.log",
-        "algologURL":"http://example.net/logs2/algo.log",
+        "algoLogURL":"http://example.net/logs2/algo.log",
         "outputsURL":[
             {
             "http://example.net/logs2/output/0",
