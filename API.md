@@ -118,7 +118,9 @@ Status description:
 |----------|--------------------|
 |  10       | Job started        |
 |  20       | Configuring volumes|
-|  30       | Configuration failed | 
+|  30       | Provisioning success |
+|  31       | Data provisioning failed |
+|  32       | Algorithm provisioning failed |
 |  40       | Running algorith   |
 |  50       | Filtering results  |
 |  60       | Filtering failed  |
