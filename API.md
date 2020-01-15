@@ -123,9 +123,8 @@ Status description:
 |  32       | Algorithm provisioning failed |
 |  40       | Running algorith   |
 |  50       | Filtering results  |
-|  60       | Filtering failed  |
-|  70       | Publishing results |
-|  80       | Job completed      |
+|  60       | Publishing results |
+|  70       | Job completed      |
 
 
 Example:
