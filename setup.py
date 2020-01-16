@@ -29,7 +29,7 @@ install_requirements = [
     'psycopg2>=2.8.4',
 ]
 
-setup_requirements = ['pytest-runner==2.11.1', ]
+setup_requirements = ['pytest-runner>=2.11.1', ]
 
 dev_requirements = [
     'bumpversion==0.5.3',
