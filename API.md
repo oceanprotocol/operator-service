@@ -110,6 +110,8 @@ Each object will contain:
         publishlogURL: URL to get the publish log (for admins only)
         algoLogURL: URL to get the algo log (for user)
         outputsURL: Array of URLs for algo outputs
+        ddo: only if there was a publishing request
+        did: if we have a ddo
 ```
 
 Status description:
