@@ -335,7 +335,7 @@ def get_execution_status():
       else:
         logging.error("Try to start")
         api_response = get_sql_status(agreementId,jobId,owner)
-        logging.error(f'Got from sql: {api_response}')
+       # logging.error(f'Got from sql: {api_response}')
         return jsonify(api_response), 200
     except ApiException as e:
         logging.error(
@@ -585,7 +585,7 @@ def get_sql_status(agreementId,jobId,owner):
         temprow['outputsURL']=row[10]
         temprow['ddo']=row[11]
         ddo_json = json.loads(row[11])
-        if id in ddo_json: 
+        if 'id' in ddo_json: 
           temprow['did']=ddo_json['id']
         result.append(temprow)
         
