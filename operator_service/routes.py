@@ -567,8 +567,8 @@ def get_sql_status(agreementId,jobId,owner):
       logging.error(f'Got select_query: {select_query}')
       logging.error(f'Got params: {params}')
       cursor.execute(select_query, params)
-      temprow=dict()
       while True:
+        temprow=dict()
         row = cursor.fetchone()
         if row == None:
             break
