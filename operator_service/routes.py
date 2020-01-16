@@ -584,7 +584,11 @@ def get_sql_status(agreementId,jobId,owner):
         temprow['algoLogURL']=row[9]
         temprow['outputsURL']=row[10]
         temprow['ddo']=row[11]
+        ddo_json = json.loads(row[11])
+        if id in ddo_json: 
+          temprow['did']=ddo_json['id']
         result.append(temprow)
+        
   except (Exception, psycopg2.Error) as error :
         result=dict()
         logging.error(f'Got PG error: {error}')
