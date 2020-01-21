@@ -19,8 +19,7 @@ Parameters
           {
             "id": "did:op:87bdaabb33354d2eb014af5091c604fb4b0f67dc6cca4d18a96547bffdc27bcf",
             "url": [
-              "https://data.ok.gov/sites/default/files/unspsc%20codes_3.csv",
-              "https://gishubdata.nd.gov/sites/default/files/NDHUB.Roads_MileMarkers_1.csv"
+              "https://data.ok.gov/sites/default/files/unspsc%20codes_3.csv"
             ],
             "index": 0
           },
@@ -60,7 +59,7 @@ Parameters
                         "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e",
                         "0xACBd138aBD70e2F00903268F3Db08f2D25677C9e"
            ],
-           "owner":"0x200",
+           "owner":""https://gishubdata.nd.gov/sites/default/files/NDHUB.Roads_MileMarkers_1.csv"",
            "publishoutput":true,
            "publishalgolog":true
         }
