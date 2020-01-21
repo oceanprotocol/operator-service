@@ -118,27 +118,23 @@ def init_execution():
       400:
         description: Some error
     """
-    if 'workflow' not in request.json:
-        logging.error(
-            f'Missing workflow')
-        return 'Missing workflow', 400
-    if 'agreementId' not in request.json['workflow']:
+    if 'agreementId' not in request.json:
         logging.error(
             f'Missing agreementId')
         return 'Missing agreementId', 400
-    if 'owner' not in request.json['workflow']:
+    if 'owner' not in request.json:
         logging.error(
             f'Missing ownerId')
         return 'Missing ownerId', 400
-    if 'stages' not in request.json['workflow']:
+    if 'stages' not in request.json:
         logging.error(
             f'Missing stages')
         return 'Missing stages', 400        
-    agreementId=request.json['workflow']['agreementId']
-    owner=request.json['workflow']['owner']
+    agreementId=request.json['agreementId']
+    owner=request.json['owner']
     execution_id = generate_new_id()
     logging.error(f'Got execution_id: {execution_id}')
-    body = create_execution(request.json['workflow'], execution_id)
+    body = create_execution(request.json, execution_id)
     logging.error(f'Got body: {body}')
     try:
         api_response = api_customobject.create_namespaced_custom_object(group, version, namespace,
@@ -192,13 +188,19 @@ def stop_execution():
     try:
       if 'agreementId' not in request.args:
         agreementId = None
+      elif length(request.args['agreementId'])<2:
+        agreementId = None
       else:
         agreementId = request.args['agreementId']
       if 'jobId' not in request.args:
         jobId = None
+      elif length(request.args['jobId'])<2:
+        jobId = None
       else:
         jobId = request.args['jobId']
       if 'owner' not in request.args:
+        owner = None
+      elif length(request.args['owner'])<2:
         owner = None
       else:
         owner = request.args['owner']
@@ -259,13 +261,19 @@ def delete_execution():
     try:
       if 'agreementId' not in request.args:
         agreementId = None
+      elif length(request.args['agreementId'])<2:
+        agreementId = None
       else:
         agreementId = request.args['agreementId']
       if 'jobId' not in request.args:
         jobId = None
+      elif length(request.args['jobId'])<2:
+        jobId = None
       else:
         jobId = request.args['jobId']
       if 'owner' not in request.args:
+        owner = None
+      elif length(request.args['owner'])<2:
         owner = None
       else:
         owner = request.args['owner']
@@ -319,13 +327,19 @@ def get_execution_status():
     try:
       if 'agreementId' not in request.args:
         agreementId = None
+      elif length(request.args['agreementId'])<2:
+        agreementId = None
       else:
         agreementId = request.args['agreementId']
       if 'jobId' not in request.args:
         jobId = None
+      elif length(request.args['jobId'])<2:
+        jobId = None
       else:
         jobId = request.args['jobId']
       if 'owner' not in request.args:
+        owner = None
+      elif length(request.args['owner'])<2:
         owner = None
       else:
         owner = request.args['owner']
@@ -544,6 +558,7 @@ def generate_new_id():
 
 def get_sql_status(agreementId,jobId,owner):
   result = []
+  #enforce strings
   logging.error("Start get_sql_status\n")
   try:
       connection = psycopg2.connect(user = os.getenv("POSTGRES_USER"),
@@ -553,17 +568,17 @@ def get_sql_status(agreementId,jobId,owner):
                                   database = os.getenv("POSTGRES_DB"))
       cursor = connection.cursor()
       logging.error("Connected\n")
-      params=dict()
+      params= []
       select_query="SELECT agreementId,workflowId,owner,status,statusText,extract(epoch from dateCreated) as dateCreated,extract(epoch from dateFinished) as dateFinished,configlogURL,publishlogURL,algologURL,outputsURL,ddo FROM jobs WHERE 1=1"
       if agreementId is not None:
         select_query=select_query+" AND agreementId=%(agreementId)s"
-        params['agreementId']=agreementId
+        params['agreementId']=str(agreementId)
       if jobId is not None:
         select_query=select_query+" AND workflowId=%(jobId)s"
-        params['jobId']=jobId
+        params['jobId']=str(jobId)
       if owner is not None:
         select_query=select_query+" AND owner=%(owner)s"
-        params['owner']=owner   
+        params['owner']=str(owner)
       logging.error(f'Got select_query: {select_query}')
       logging.error(f'Got params: {params}')
       cursor.execute(select_query, params)
@@ -616,13 +631,13 @@ def get_sql_jobs(agreementId,jobId,owner):
       select_query="SELECT workflowId FROM jobs WHERE 1=1"
       if agreementId is not None:
         select_query=select_query+" AND agreementId=%(agreementId)s"
-        params['agreementId']=agreementId
+        params['agreementId']=str(agreementId)
       if jobId is not None:
         select_query=select_query+" AND workflowId=%(jobId)s"
-        params['jobId']=jobId
+        params['jobId']=str(jobId)
       if owner is not None:
         select_query=select_query+" AND owner=%(owner)s"
-        params['owner']=owner   
+        params['owner']=str(owner)   
       logging.error(f'Got select_query: {select_query}')
       logging.error(f'Got params: {params}')
       cursor.execute(select_query, params)
@@ -654,11 +669,11 @@ def create_sql_job(agreementId,execution_id,owner):
       cursor = connection.cursor()
 
       postgres_insert_query = """ INSERT INTO jobs (agreementId,workflowId,owner,status,statusText) VALUES (%s,%s,%s,%s,%s)"""
-      record_to_insert = (agreementId,execution_id, owner,10,"Job started")
+      record_to_insert = (str(agreementId),str(execution_id), str(owner),10,"Job started")
       cursor.execute(postgres_insert_query, record_to_insert)
       connection.commit()
     except (Exception, psycopg2.Error) as error :
-      output = output + "Error PostgreSQL:"+str(error)
+       logging.error(f'Got PG error: {error}')
     finally:
     #closing database connection.
         if(connection):
