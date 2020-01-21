@@ -10,7 +10,6 @@ Start a new job
 Parameters
 ```
 {
-  "workflow": {
     "agreementId":"111",
     "owner":"0x22",
     "stages": [
@@ -67,7 +66,6 @@ Parameters
         }
       }
     ]
-  }
 }
 ```
 
