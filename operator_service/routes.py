@@ -189,19 +189,19 @@ def stop_execution():
     try:
       if 'agreementId' not in request.args:
         agreementId = None
-      elif length(request.args['agreementId'])<2:
+      elif len(request.args['agreementId'])<2:
         agreementId = None
       else:
         agreementId = request.args['agreementId']
       if 'jobId' not in request.args:
         jobId = None
-      elif length(request.args['jobId'])<2:
+      elif len(request.args['jobId'])<2:
         jobId = None
       else:
         jobId = request.args['jobId']
       if 'owner' not in request.args:
         owner = None
-      elif length(request.args['owner'])<2:
+      elif len(request.args['owner'])<2:
         owner = None
       else:
         owner = request.args['owner']
@@ -262,19 +262,19 @@ def delete_execution():
     try:
       if 'agreementId' not in request.args:
         agreementId = None
-      elif length(request.args['agreementId'])<2:
+      elif len(request.args['agreementId'])<2:
         agreementId = None
       else:
         agreementId = request.args['agreementId']
       if 'jobId' not in request.args:
         jobId = None
-      elif length(request.args['jobId'])<2:
+      elif len(request.args['jobId'])<2:
         jobId = None
       else:
         jobId = request.args['jobId']
       if 'owner' not in request.args:
         owner = None
-      elif length(request.args['owner'])<2:
+      elif len(request.args['owner'])<2:
         owner = None
       else:
         owner = request.args['owner']
@@ -328,19 +328,19 @@ def get_execution_status():
     try:
       if 'agreementId' not in request.args:
         agreementId = None
-      elif length(request.args['agreementId'])<2:
+      elif len(request.args['agreementId'])<2:
         agreementId = None
       else:
         agreementId = request.args['agreementId']
       if 'jobId' not in request.args:
         jobId = None
-      elif length(request.args['jobId'])<2:
+      elif len(request.args['jobId'])<2:
         jobId = None
       else:
         jobId = request.args['jobId']
       if 'owner' not in request.args:
         owner = None
-      elif length(request.args['owner'])<2:
+      elif len(request.args['owner'])<2:
         owner = None
       else:
         owner = request.args['owner']
@@ -569,7 +569,7 @@ def get_sql_status(agreementId,jobId,owner):
                                   database = os.getenv("POSTGRES_DB"))
       cursor = connection.cursor()
       logging.error("Connected\n")
-      params= []
+      params= dict()
       select_query="SELECT agreementId,workflowId,owner,status,statusText,extract(epoch from dateCreated) as dateCreated,extract(epoch from dateFinished) as dateFinished,configlogURL,publishlogURL,algologURL,outputsURL,ddo FROM jobs WHERE 1=1"
       if agreementId is not None:
         select_query=select_query+" AND agreementId=%(agreementId)s"
@@ -595,10 +595,10 @@ def get_sql_status(agreementId,jobId,owner):
         temprow['statusText']=row[4]
         temprow['dateCreated']=row[5]
         temprow['dateFinished']=row[6]
-        temprow['configlogURL']=row[7]
-        temprow['publishlogURL']=row[8]
-        temprow['algoLogURL']=row[9]
-        temprow['outputsURL']=row[10]
+        temprow['configlogUrl']=row[7]
+        temprow['publishlogUrl']=row[8]
+        temprow['algologUrl']=row[9]
+        temprow['outputsUrl']=row[10]
         temprow['ddo']=row[11]
         ddo_json = json.loads(row[11])
         if 'id' in ddo_json: 

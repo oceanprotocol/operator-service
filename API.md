@@ -103,10 +103,10 @@ Each object will contain:
         dateFinished:Unix timestamp when job finished
         status:  Int, see below for list
         statusText: String, see below
-        configlogURL: URL to get the configuration log (for admins only)
-        publishlogURL: URL to get the publish log (for admins only)
-        algoLogURL: URL to get the algo log (for user)
-        outputsURL: Array of URLs for algo outputs
+        configlogUrl: URL to get the configuration log (for admins only)
+        publishlogUrl: URL to get the publish log (for admins only)
+        algologUrl: URL to get the algo log (for user)
+        outputsUrl: Array of URLs for algo outputs
         ddo: only if there was a publishing request
         did: if we have a ddo
 ```
@@ -142,10 +142,10 @@ Output:
         "dateFinished":"2020-10-01T01:00:00Z",
         "status":5,
         "statusText":"Job finished",
-        "configlogURL":"http://example.net/logs/config.log",
-        "publishlogURL":"http://example.net/logs/publish.log",
-        "algoLogURL":"http://example.net/logs/algo.log",
-        "outputsURL":[
+        "configlogUrl":"http://example.net/logs/config.log",
+        "publishlogUrl":"http://example.net/logs/publish.log",
+        "algologUrl":"http://example.net/logs/algo.log",
+        "outputsUrl":[
             {
             "http://example.net/logs/output/0",
             "http://example.net/logs/output/1"
@@ -160,10 +160,10 @@ Output:
         "dateFinished":"2020-10-01T01:00:00Z",
         "status":5,
         "statusText":"Job finished",
-        "configlogURL":"http://example.net/logs2/config.log",
-        "publishlogURL":"http://example.net/logs2/cpublish.log",
-        "algoLogURL":"http://example.net/logs2/algo.log",
-        "outputsURL":[
+        "configlogUrl":"http://example.net/logs2/config.log",
+        "publishlogUrl":"http://example.net/logs2/cpublish.log",
+        "algologUrl":"http://example.net/logs2/algo.log",
+        "outputsUrl":[
             {
             "http://example.net/logs2/output/0",
             "http://example.net/logs2/output/1"
