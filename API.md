@@ -111,7 +111,7 @@ Each object will contain:
         did: if we have a ddo
 ```
 
-Status description:
+### Status description:
 
 | status   | Description        |
 |----------|--------------------|
