@@ -92,9 +92,9 @@ Parameters
 
 Returns
 
-An Array of objects, each object describing a workflow. If the array is empty, then the search yeld no results
+An Array of status objects, each object describing a workflow. If the array is empty, then the search yeld no results
 
-Each object will contain:
+### Status object
 ```
         owner:The owner of this compute job
         agreementId:
@@ -194,16 +194,11 @@ Parameters
 
 Returns
 
-Status, whether or not the job was stopped successfully.
+One or more status objects
 
 Example:
 ```
 PUT /api/v1/compute?signature=0x00110011&serviceAgreementId=0x1111&jobId=012023
-```
-
-Output:
-```
-OK
 ```
 
 ## Delete
@@ -222,14 +217,10 @@ Parameters
 
 Returns
 
-Status, whether or not the job was removed successfully.
+One or more status objects
 
 Example:
 ```
 DELETE /api/v1/compute?signature=0x00110011&serviceAgreementId=0x1111&jobId=012023
 ```
 
-Output:
-```
-OK
-```
