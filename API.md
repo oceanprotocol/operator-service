@@ -109,6 +109,8 @@ Each object will contain:
         outputsUrl: Array of URLs for algo outputs
         ddo: only if there was a publishing request
         did: if we have a ddo
+        stopreq: 0 - None, 1 - API Enpoint Stop called, 2 - Job exceeded allocated time
+        removed: 0 - No, 1 - Removed from k8 cluster
 ```
 
 ### Status description:
