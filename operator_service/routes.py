@@ -138,6 +138,16 @@ def init_execution():
     if 'output' not in request.json['stages'][0]:
         logging.error(f'Missing output in stage')
         return 'Missing output in', 400
+    #check timeouts
+    timeout=os.getenv("ALGOPODTIMEOUT")
+    if timeout is not None:
+        timeout=int(timeout)
+        if timeout>0:
+            if 'maxtime' in request.json['stages'][0]['compute']:
+                maxtime=int(request.json['stages'][0]['compute']['maxtime'])
+                if timeout<maxtime:
+                  request.json['stages'][0]['compute']['maxtime']=timeout
+                  logging.error(f"Maxtime in workflow was {maxtime}. Overwritten to {timeout}")
     agreementId=request.json['agreementId']
     owner=request.json['owner']
     execution_id = generate_new_id()
