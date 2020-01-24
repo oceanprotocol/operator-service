@@ -6,11 +6,11 @@ from os import path
 import kubernetes
 import os
 import psycopg2
-import yaml
 from flask import Blueprint, jsonify, request, Response
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 import simplejson as json
+
 services = Blueprint('services', __name__)
 
 # Configuration to connect to k8s.
@@ -23,7 +23,6 @@ else:
 api_customobject = client.CustomObjectsApi()
 api_core = client.CoreV1Api()
 
-
 config_parser = ConfigParser()
 configuration = config_parser.read('/operator-service/config.ini')
 group = config_parser.get('resources', 'group')  # str | The custom resource's group name
@@ -31,7 +30,6 @@ version = config_parser.get('resources', 'version')  # str | The custom resource
 namespace = config_parser.get('resources', 'namespace')  # str | The custom resource's namespace
 plural = config_parser.get('resources',
                            'plural')  # str | The custom resource's plural name. For TPRs this would be
-
 
 
 @services.route('/compute', methods=['POST'])
@@ -122,10 +120,10 @@ def init_execution():
         return 'Missing ownerId', 400
     if 'stages' not in request.json:
         logging.error(f'Missing stages')
-        return 'Missing stages', 400 
+        return 'Missing stages', 400
     if not request.json['stages']:
         logging.error(f'Missing stages')
-        return 'Missing stages', 400 
+        return 'Missing stages', 400
     if 'algorithm' not in request.json['stages'][0]:
         logging.error(f'Missing algorithm in stage')
         return 'Missing algorithm in stages', 400
@@ -138,18 +136,18 @@ def init_execution():
     if 'output' not in request.json['stages'][0]:
         logging.error(f'Missing output in stage')
         return 'Missing output in', 400
-    #check timeouts
-    timeout=os.getenv("ALGOPODTIMEOUT")
+    # check timeouts
+    timeout = os.getenv("ALGOPODTIMEOUT")
     if timeout is not None:
-        timeout=int(timeout)
-        if timeout>0:
+        timeout = int(timeout)
+        if timeout > 0:
             if 'maxtime' in request.json['stages'][0]['compute']:
-                maxtime=int(request.json['stages'][0]['compute']['maxtime'])
-                if timeout<maxtime:
-                  request.json['stages'][0]['compute']['maxtime']=timeout
-                  logging.error(f"Maxtime in workflow was {maxtime}. Overwritten to {timeout}")
-    agreementId=request.json['agreementId']
-    owner=request.json['owner']
+                maxtime = int(request.json['stages'][0]['compute']['maxtime'])
+                if timeout < maxtime:
+                    request.json['stages'][0]['compute']['maxtime'] = timeout
+                    logging.error(f"Maxtime in workflow was {maxtime}. Overwritten to {timeout}")
+    agreement_id = request.json['agreementId']
+    owner = request.json['owner']
     execution_id = generate_new_id()
     logging.error(f'Got execution_id: {execution_id}')
     body = create_execution(request.json, execution_id)
@@ -158,8 +156,8 @@ def init_execution():
         api_response = api_customobject.create_namespaced_custom_object(group, version, namespace,
                                                                         plural, body)
         logging.info(api_response)
-        create_sql_job(agreementId,str(execution_id),owner)
-        status_list = get_sql_status(agreementId,str(execution_id),owner)
+        create_sql_job(agreement_id, str(execution_id), owner)
+        status_list = get_sql_status(agreement_id, str(execution_id), owner)
         return jsonify(status_list), 200
     except ApiException as e:
         logging.error(f'Exception when calling CustomObjectsApi->create_namespaced_custom_object: {e}')
@@ -190,35 +188,35 @@ def stop_execution():
         type: string
     """
     try:
-      if 'agreementId' not in request.args:
-        agreementId = None
-      elif len(request.args['agreementId'])<2:
-        agreementId = None
-      else:
-        agreementId = request.args['agreementId']
-      if 'jobId' not in request.args:
-        jobId = None
-      elif len(request.args['jobId'])<2:
-        jobId = None
-      else:
-        jobId = request.args['jobId']
-      if 'owner' not in request.args:
-        owner = None
-      elif len(request.args['owner'])<2:
-        owner = None
-      else:
-        owner = request.args['owner']
-      if owner is None and agreementId is None and jobId is None:
-        logging.error(f'All args are null ?')
-        return f'You have to specify one of agreementId,jobId or owner', 400    
-      else:
-        jobslist=get_sql_jobs(agreementId,jobId,owner)
-        for ajob in jobslist:
-            name=ajob
-            logging.info(f'Stoping job : {name}')
-            stop_sql_job(name)
-        status_list = get_sql_status(agreementId,jobId,owner)
-        return jsonify(status_list), 200
+        if 'agreementId' not in request.args:
+            agreement_id = None
+        elif len(request.args['agreementId']) < 2:
+            agreement_id = None
+        else:
+            agreement_id = request.args['agreementId']
+        if 'jobId' not in request.args:
+            job_id = None
+        elif len(request.args['jobId']) < 2:
+            job_id = None
+        else:
+            job_id = request.args['jobId']
+        if 'owner' not in request.args:
+            owner = None
+        elif len(request.args['owner']) < 2:
+            owner = None
+        else:
+            owner = request.args['owner']
+        if owner is None and agreement_id is None and job_id is None:
+            logging.error(f'All args are null ?')
+            return f'You have to specify one of agreementId,jobId or owner', 400
+        else:
+            jobslist = get_sql_jobs(agreement_id, job_id, owner)
+            for ajob in jobslist:
+                name = ajob
+                logging.info(f'Stoping job : {name}')
+                stop_sql_job(name)
+            status_list = get_sql_status(agreement_id, job_id, owner)
+            return jsonify(status_list), 200
     except ApiException as e:
         print("Exception when calling CustomObjectsApi->delete_namespaced_custom_object: %s\n" % e)
         return 'Error stopping job', 400
@@ -262,45 +260,43 @@ def delete_execution():
     # resource-specific default policy. (optional)
     try:
         if 'agreementId' not in request.args:
-          agreementId = None
-        elif len(request.args['agreementId'])<2:
-          agreementId = None
+            agreement_id = None
+        elif len(request.args['agreementId']) < 2:
+            agreement_id = None
         else:
-          agreementId = request.args['agreementId']
+            agreement_id = request.args['agreementId']
         if 'jobId' not in request.args:
-          jobId = None
-        elif len(request.args['jobId'])<2:
-          jobId = None
+            job_id = None
+        elif len(request.args['jobId']) < 2:
+            job_id = None
         else:
-          jobId = request.args['jobId']
+            job_id = request.args['jobId']
         if 'owner' not in request.args:
-          owner = None
-        elif len(request.args['owner'])<2:
-          owner = None
+            owner = None
+        elif len(request.args['owner']) < 2:
+            owner = None
         else:
-          owner = request.args['owner']
-        if owner is None and agreementId is None and jobId is None:
-          logging.error(f'All args are null ?')
-          return f'You have to specify one of agreementId,jobId or owner', 400    
+            owner = request.args['owner']
+        if owner is None and agreement_id is None and job_id is None:
+            logging.error(f'All args are null ?')
+            return f'You have to specify one of agreementId,jobId or owner', 400
         else:
-          jobslist=get_sql_jobs(agreementId,jobId,owner)
-          for ajob in jobslist:
-              name=ajob
-              logging.info(f'Deleting job : {name}')
-              remove_sql_job(name)
-              api_response = api_customobject.delete_namespaced_custom_object(group, version, namespace,
-                                                                        plural, name, body,
-                                                                        grace_period_seconds=grace_period_seconds,
-                                                                        orphan_dependents=orphan_dependents,
-                                                                        propagation_policy=propagation_policy)
-              logging.info(api_response)
-        status_list = get_sql_status(agreementId,jobId,owner)
+            jobslist = get_sql_jobs(agreement_id, job_id, owner)
+            for ajob in jobslist:
+                name = ajob
+                logging.info(f'Deleting job : {name}')
+                remove_sql_job(name)
+                api_response = api_customobject.delete_namespaced_custom_object(group, version, namespace,
+                                                                                plural, name, body,
+                                                                                grace_period_seconds=grace_period_seconds,
+                                                                                orphan_dependents=orphan_dependents,
+                                                                                propagation_policy=propagation_policy)
+                logging.info(api_response)
+        status_list = get_sql_status(agreement_id, job_id, owner)
         return jsonify(status_list), 200
     except ApiException as e:
         logging.error(f'Exception when calling CustomObjectsApi->delete_namespaced_custom_object: {e}')
         return 'Error deleteing job', 400
-        
-
 
 
 @services.route('/compute', methods=['GET'])
@@ -332,39 +328,39 @@ def get_execution_status():
         description: Error
     """
     try:
-      if 'agreementId' not in request.args:
-        agreementId = None
-      elif len(request.args['agreementId'])<2:
-        agreementId = None
-      else:
-        agreementId = request.args['agreementId']
-      if 'jobId' not in request.args:
-        jobId = None
-      elif len(request.args['jobId'])<2:
-        jobId = None
-      else:
-        jobId = request.args['jobId']
-      if 'owner' not in request.args:
-        owner = None
-      elif len(request.args['owner'])<2:
-        owner = None
-      else:
-        owner = request.args['owner']
-      if owner is None and agreementId is None and jobId is None:
-        logging.error(f'All args are null ?')
-        return f'You have to specify one of agreementId,jobId or owner', 400    
-      else:
-        logging.error("Try to start")
-        api_response = get_sql_status(agreementId,jobId,owner)
-       # logging.error(f'Got from sql: {api_response}')
-        return jsonify(api_response), 200
+        if 'agreementId' not in request.args:
+            agreement_id = None
+        elif len(request.args['agreementId']) < 2:
+            agreement_id = None
+        else:
+            agreement_id = request.args['agreementId']
+        if 'jobId' not in request.args:
+            job_id = None
+        elif len(request.args['jobId']) < 2:
+            job_id = None
+        else:
+            job_id = request.args['jobId']
+        if 'owner' not in request.args:
+            owner = None
+        elif len(request.args['owner']) < 2:
+            owner = None
+        else:
+            owner = request.args['owner']
+        if owner is None and agreement_id is None and job_id is None:
+            logging.error(f'All args are null ?')
+            return f'You have to specify one of agreementId,jobId or owner', 400
+        else:
+            logging.error("Try to start")
+            api_response = get_sql_status(agreement_id, job_id, owner)
+            # logging.error(f'Got from sql: {api_response}')
+            return jsonify(api_response), 200
     except ApiException as e:
         logging.error(
             f'Exception when calling status: {e}')
         return 'Error getting the status', 400
-    
 
-# methhods not in API.md - admin only
+
+# methods not in API.md - admin only
 
 @services.route('/pgsqlinit', methods=['POST'])
 def init_pgsqlexecution():
@@ -377,14 +373,16 @@ def init_pgsqlexecution():
       - application/json
     """
     output = ""
+    connection = None
+    cursor = None
     try:
-      connection = psycopg2.connect(user = os.getenv("POSTGRES_USER"),
-                                  password = os.getenv("POSTGRES_PASSWORD"),
-                                  host = os.getenv("POSTGRES_HOST"),
-                                  port = os.getenv("POSTGRES_PORT"),
-                                  database = os.getenv("POSTGRES_DB"))
-      cursor = connection.cursor()
-      create_table_query = '''CREATE TABLE IF NOT EXISTS jobs 
+        connection = psycopg2.connect(user=os.getenv("POSTGRES_USER"),
+                                      password=os.getenv("POSTGRES_PASSWORD"),
+                                      host=os.getenv("POSTGRES_HOST"),
+                                      port=os.getenv("POSTGRES_PORT"),
+                                      database=os.getenv("POSTGRES_DB"))
+        cursor = connection.cursor()
+        create_table_query = '''CREATE TABLE IF NOT EXISTS jobs 
           (agreementId           varchar(255) NOT NULL,
           workflowId         varchar(255) NOT NULL,
           owner         varchar(255),
@@ -401,28 +399,26 @@ def init_pgsqlexecution():
           stopreq smallint default 0,
           removed smallint default 0
           ); '''
-      cursor.execute(create_table_query)
-      #queries below are for upgrade purposes
-      create_table_query = '''ALTER TABLE jobs ADD COLUMN IF NOT EXISTS namespace varchar(255)'''
-      cursor.execute(create_table_query)
-      create_table_query = '''ALTER TABLE jobs ADD COLUMN IF NOT EXISTS stopreq smallint default 0'''
-      cursor.execute(create_table_query)
-      create_table_query = '''ALTER TABLE jobs ADD COLUMN IF NOT EXISTS removed smallint default 0'''
-      cursor.execute(create_table_query)
-      create_index_query = '''CREATE unique INDEX IF NOT EXISTS uniq_agreementId_workflowId ON jobs (agreementId,workflowId)'''
-      cursor.execute(create_index_query)
-      connection.commit()
-    except (Exception, psycopg2.Error) as error :
-      output = output + "Error PostgreSQL:"+str(error)
+        cursor.execute(create_table_query)
+        # queries below are for upgrade purposes
+        create_table_query = '''ALTER TABLE jobs ADD COLUMN IF NOT EXISTS namespace varchar(255)'''
+        cursor.execute(create_table_query)
+        create_table_query = '''ALTER TABLE jobs ADD COLUMN IF NOT EXISTS stopreq smallint default 0'''
+        cursor.execute(create_table_query)
+        create_table_query = '''ALTER TABLE jobs ADD COLUMN IF NOT EXISTS removed smallint default 0'''
+        cursor.execute(create_table_query)
+        create_index_query = '''CREATE unique INDEX IF NOT EXISTS uniq_agreementId_workflowId ON jobs (agreementId,workflowId)'''
+        cursor.execute(create_index_query)
+        connection.commit()
+    except (Exception, psycopg2.Error) as error:
+        output = output + "Error PostgreSQL:" + str(error)
     finally:
-    #closing database connection.
-        if(connection):
+        # closing database connection.
+        if connection and cursor:
             cursor.close()
             connection.close()
-    
+
     return output, 200
-
-
 
 
 @services.route('/info', methods=['GET'])
@@ -476,8 +472,6 @@ def list_executions():
         return 'Error listing workflows', 400
 
 
-
-
 @services.route('/logs', methods=['GET'])
 def get_logs():
     """
@@ -507,10 +501,6 @@ def get_logs():
         description: Pod not found for the given parameters
     """
     data = request.args
-    required_attributes = [
-        'jobId',
-        'component'
-    ]
     try:
         execution_id = data.get('jobId')
         component = data.get('component')
@@ -544,8 +534,6 @@ def get_logs():
         return 'Error getting the logs', 400
 
 
-
-
 def create_execution(workflow, execution_id):
     execution = dict()
     execution['apiVersion'] = group + '/' + version
@@ -570,168 +558,149 @@ def generate_new_id():
     return uuid.uuid4().hex
 
 
-#sql handlers
+# sql handlers
 
+def get_sql_status(agreement_id, job_id, owner):
+    # enforce strings
+    logging.debug("Start get_sql_status\n")
+    logging.debug("Connected\n")
+    params = dict()
+    select_query = '''
+    SELECT agreementId, workflowId, owner, status, statusText, 
+        extract(epoch from dateCreated) as dateCreated, 
+        extract(epoch from dateFinished) as dateFinished,
+        configlogURL, publishlogURL, algologURL, outputsURL, ddo, stopreq, removed 
+    FROM jobs WHERE 1=1
+    '''
 
-def get_sql_status(agreementId,jobId,owner):
-  result = []
-  #enforce strings
-  logging.error("Start get_sql_status\n")
-  connection = getpgconn()
-  try:
-      cursor = connection.cursor()
-      logging.error("Connected\n")
-      params= dict()
-      select_query="SELECT agreementId,workflowId,owner,status,statusText,extract(epoch from dateCreated) as dateCreated,extract(epoch from dateFinished) as dateFinished,configlogURL,publishlogURL,algologURL,outputsURL,ddo,stopreq,removed FROM jobs WHERE 1=1"
-      if agreementId is not None:
-        select_query=select_query+" AND agreementId=%(agreementId)s"
-        params['agreementId']=str(agreementId)
-      if jobId is not None:
-        select_query=select_query+" AND workflowId=%(jobId)s"
-        params['jobId']=str(jobId)
-      if owner is not None:
-        select_query=select_query+" AND owner=%(owner)s"
-        params['owner']=str(owner)
-      logging.error(f'Got select_query: {select_query}')
-      logging.error(f'Got params: {params}')
-      cursor.execute(select_query, params)
-      while True:
-        temprow=dict()
-        row = cursor.fetchone()
-        if row == None:
-            break
-        temprow['agreementId']=row[0]
-        temprow['jobId']=row[1]
-        temprow['owner']=row[2]
-        temprow['status']=row[3]
-        temprow['statusText']=row[4]
-        temprow['dateCreated']=row[5]
-        temprow['dateFinished']=row[6]
-        #temprow['configlogUrl']=row[7]
-        #temprow['publishlogUrl']=row[8]
-        temprow['algologUrl']=row[9]
-        temprow['outputsUrl']=row[10]
-        temprow['ddo']=''
-        temprow['did']=''
+    if agreement_id is not None:
+        select_query = select_query + " AND agreementId=%(agreementId)s"
+        params['agreementId'] = str(agreement_id)
+
+    if job_id is not None:
+        select_query = select_query + " AND workflowId=%(jobId)s"
+        params['jobId'] = str(job_id)
+
+    if owner is not None:
+        select_query = select_query + " AND owner=%(owner)s"
+        params['owner'] = str(owner)
+
+    logging.debug(f'Got select_query: {select_query}')
+    logging.debug(f'Got params: {params}')
+
+    result = []
+    rows = _execute_query(select_query, params, 'get_sql_status', get_rows=True)
+    if not rows:
+        return
+
+    for row in rows:
+        temprow = dict()
+        temprow['agreementId'] = row[0]
+        temprow['jobId'] = row[1]
+        temprow['owner'] = row[2]
+        temprow['status'] = row[3]
+        temprow['statusText'] = row[4]
+        temprow['dateCreated'] = row[5]
+        temprow['dateFinished'] = row[6]
+        # temprow['configlogUrl']=row[7]
+        # temprow['publishlogUrl']=row[8]
+        temprow['algologUrl'] = row[9]
+        temprow['outputsUrl'] = row[10]
+        temprow['ddo'] = ''
+        temprow['did'] = ''
         if row[11] is not None:
-            temprow['ddo']=str(row[11])
+            temprow['ddo'] = str(row[11])
             ddo_json = json.loads(temprow['ddo'])
             if 'id' in ddo_json:
-                temprow['did']=ddo_json['id']
-        temprow['stopreq']=row[12]
-        temprow['removed']=row[13]
+                temprow['did'] = ddo_json['id']
+        temprow['stopreq'] = row[12]
+        temprow['removed'] = row[13]
         result.append(temprow)
-        
-  except (Exception, psycopg2.Error) as error :
-        result=dict()
-        logging.error(f'Got PG error in get_sql_status: {error}')
-  finally:
-    #closing database connection.
-        if(connection):
-            cursor.close()
-            connection.close()
-        logging.error('Done')
-  return result
+    return result
 
 
-def get_sql_jobs(agreementId,jobId,owner):
-  result = []
-  logging.error("Start get_sql_status\n")
-  connection = getpgconn()
-  try:
-      cursor = connection.cursor()
-      logging.error("Connected\n")
-      params=dict()
-      select_query="SELECT workflowId FROM jobs WHERE 1=1"
-      if agreementId is not None:
-        select_query=select_query+" AND agreementId=%(agreementId)s"
-        params['agreementId']=str(agreementId)
-      if jobId is not None:
-        select_query=select_query+" AND workflowId=%(jobId)s"
-        params['jobId']=str(jobId)
-      if owner is not None:
-        select_query=select_query+" AND owner=%(owner)s"
-        params['owner']=str(owner)
-      logging.error(f'Got select_query: {select_query}')
-      logging.error(f'Got params: {params}')
-      cursor.execute(select_query, params)
-      temprow=dict()
-      while True:
-        row = cursor.fetchone()
-        if row == None:
-            break
-        result.append(row[0])
-  except (Exception, psycopg2.Error) as error :
-        result=dict()
-        logging.error(f'Got PG error in get_sql_jobs: {error}')
-  finally:
-    #closing database connection.
-        if(connection):
-            cursor.close()
-            connection.close()
-        logging.error('Done')
-  return result
+def get_sql_jobs(agreement_id, job_id, owner):
+    logging.debug("Start get_sql_status\n")
+    logging.debug("Connected\n")
+    params = dict()
+    select_query = "SELECT workflowId FROM jobs WHERE 1=1"
+    if agreement_id is not None:
+        select_query = select_query + " AND agreementId=%(agreementId)s"
+        params['agreementId'] = str(agreement_id)
+    if job_id is not None:
+        select_query = select_query + " AND workflowId=%(jobId)s"
+        params['jobId'] = str(job_id)
+    if owner is not None:
+        select_query = select_query + " AND owner=%(owner)s"
+        params['owner'] = str(owner)
+    logging.error(f'Got select_query: {select_query}')
+    logging.error(f'Got params: {params}')
+    rows = _execute_query(select_query, params, 'get_sql_jobs', get_rows=True)
+    if not rows:
+        return
+
+    return [row[0] for row in rows]
 
 
-def create_sql_job(agreementId,jobId,owner):
-    connection = getpgconn()
-    try:
-      cursor = connection.cursor()
-      postgres_insert_query = """ INSERT INTO jobs (agreementId,workflowId,owner,status,statusText) VALUES (%s,%s,%s,%s,%s)"""
-      record_to_insert = (str(agreementId),str(jobId),str(owner),10,"Job started")
-      cursor.execute(postgres_insert_query, record_to_insert)
-      connection.commit()
-    except (Exception, psycopg2.Error) as error :
-       logging.error(f'Got PG error in create_sql_job: {error}')
-    finally:
-    #closing database connection.
-        if(connection):
-            cursor.close()
-            connection.close()
+def create_sql_job(agreement_id, job_id, owner):
+    postgres_insert_query = """
+        INSERT 
+            INTO jobs 
+                (agreementId,workflowId,owner,status,statusText) 
+            VALUES 
+                (%s, %s, %s, %s, %s)"""
+    record_to_insert = (str(agreement_id), str(job_id), str(owner), 10, "Job started")
+    return _execute_query(postgres_insert_query, record_to_insert, 'create_sql_job')
 
 
 def stop_sql_job(execution_id):
-    connection = getpgconn()
-    try:
-      cursor = connection.cursor()
-      postgres_insert_query = """ UPDATE jobs SET stopreq=1 WHERE workflowId=%s"""
-      record_to_insert = (str(execution_id),)
-      cursor.execute(postgres_insert_query, record_to_insert)
-      connection.commit()
-    except (Exception, psycopg2.Error) as error :
-       logging.error(f'Got PG error in stop_sql_job: {error}')
-    finally:
-    #closing database connection.
-        if(connection):
-            cursor.close()
-            connection.close()
+    postgres_insert_query = """UPDATE jobs SET stopreq=1 WHERE workflowId=%s"""
+    record_to_insert = (str(execution_id),)
+    return _execute_query(postgres_insert_query, record_to_insert, 'stop_sql_job')
+
 
 def remove_sql_job(execution_id):
-    connection = getpgconn()
-    try:
-      cursor = connection.cursor()
-      postgres_insert_query = """ UPDATE jobs SET removed=1 WHERE workflowId=%s"""
-      record_to_insert = (str(execution_id),)
-      cursor.execute(postgres_insert_query, record_to_insert)
-      connection.commit()
-    except (Exception, psycopg2.Error) as error :
-       logging.error(f'Got PG error in remove_sql_job: {error}')
-    finally:
-    #closing database connection.
-        if(connection):
-            cursor.close()
-            connection.close()            
+    postgres_insert_query = """ UPDATE jobs SET removed=1 WHERE workflowId=%s"""
+    record_to_insert = (str(execution_id),)
+    return _execute_query(postgres_insert_query, record_to_insert, 'remove_sql_job')
 
-def getpgconn():
+
+def get_pg_connection_and_cursor():
     try:
-        connection = psycopg2.connect(user = os.getenv("POSTGRES_USER"),
-                                  password = os.getenv("POSTGRES_PASSWORD"),
-                                  host = os.getenv("POSTGRES_HOST"),
-                                  port = os.getenv("POSTGRES_PORT"),
-                                  database = os.getenv("POSTGRES_DB"))
+        connection = psycopg2.connect(user=os.getenv("POSTGRES_USER"),
+                                      password=os.getenv("POSTGRES_PASSWORD"),
+                                      host=os.getenv("POSTGRES_HOST"),
+                                      port=os.getenv("POSTGRES_PORT"),
+                                      database=os.getenv("POSTGRES_DB"))
         connection.set_client_encoding('LATIN9')
-        return connection
-    except (Exception, psycopg2.Error) as error :
+        cursor = connection.cursor()
+        return connection, cursor
+    except (Exception, psycopg2.Error) as error:
         logging.error(f'New PG connect error: {error}')
-        return None
+        return None, None
 
+
+def _execute_query(query, record, msg, get_rows=False):
+    connection, cursor = get_pg_connection_and_cursor()
+    if not connection or not cursor:
+        return
+
+    try:
+        cursor.execute(query, record)
+        if get_rows:
+            result = []
+            row = cursor.fetchone()
+            while row is not None:
+                result.append(row[0])
+                row = cursor.fetchone()
+            return result
+        else:
+            connection.commit()
+
+    except (Exception, psycopg2.Error) as error:
+        logging.error(f'Got PG error in {msg}: {error}')
+    finally:
+        # closing database connection.
+        if connection:
+            cursor.close()
+            connection.close()
