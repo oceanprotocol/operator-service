@@ -104,26 +104,25 @@ def start_compute_job():
     """
 
     data = request.json
-    workflow = data.get('workflow')
-    if not workflow:
-        return f'`workflow` is required in the payload and must ' \
-               f'include workflow stages, agreementId, and owner', 400
     required_attributes = [
-        'stages',
+        'workflow',
         'agreementId',
         'owner',
     ]
-    msg, status = check_required_attributes(required_attributes, workflow, 'POST:/compute')
+    msg, status = check_required_attributes(required_attributes, data, 'POST:/compute')
     if msg:
         return msg, status
 
+    workflow = data.get('workflow')
     agreement_id = data.get('agreementId')
     owner = data.get('owner')
-    stages = data.get('stages')
+    # signature = data.get('signature')
+    if not workflow:
+        return f'`workflow` is required in the payload and must ' \
+               f'include workflow stages', 400
 
     # verify provider's signature
     # allowed_providers = get_list_of_allowed_providers()
-    # signature = data.get('signature')
     # if not signature:
     #     return f'`signature` is required (signed agreementId by the provider ethereum account)', 400
     # try:
@@ -131,6 +130,7 @@ def start_compute_job():
     # except InvalidSignatureError as e:
     #     return f'{e}', 401
 
+    stages = workflow.get('stages')
     if not stages:
         logging.error(f'Missing stages')
         return 'Missing stages', 400
@@ -152,7 +152,7 @@ def start_compute_job():
     job_id = generate_new_id()
     logging.debug(f'Got job_id: {job_id}')
     body = create_compute_job(
-        data, job_id, config.group, config.version, config.namespace
+        workflow, job_id, config.group, config.version, config.namespace
     )
     logging.debug(f'Got body: {body}')
 
