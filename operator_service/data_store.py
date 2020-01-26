@@ -55,9 +55,10 @@ def get_sql_status(agreement_id, job_id, owner):
         temprow['did'] = ''
         if row[11] is not None:
             temprow['ddo'] = str(row[11])
-            ddo_json = json.loads(temprow['ddo'])
-            if 'id' in ddo_json:
-                temprow['did'] = ddo_json['id']
+            if len(temprow['ddo'])>2:
+                ddo_json = json.loads(temprow['ddo'])
+                if 'id' in ddo_json:
+                    temprow['did'] = ddo_json['id']
         temprow['stopreq'] = row[12]
         temprow['removed'] = row[13]
         result.append(temprow)
@@ -138,7 +139,7 @@ def _execute_query(query, record, msg, get_rows=False):
             result = []
             row = cursor.fetchone()
             while row is not None:
-                result.append(row[0])
+                result.append(row)
                 row = cursor.fetchone()
             return result
         else:
