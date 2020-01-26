@@ -1,7 +1,15 @@
+import uuid
 import logging
 
 logger = logging.getLogger(__name__)
 
+
+def generate_new_id():
+    """
+    Generate a new id without prefix.
+    :return: Id, str
+    """
+    return uuid.uuid4().hex
 
 def create_compute_job(workflow, execution_id, group, version, namespace):
     execution = dict()

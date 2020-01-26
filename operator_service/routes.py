@@ -5,12 +5,12 @@ import logging
 import kubernetes
 from flask import Blueprint, jsonify, request
 from kubernetes.client.rest import ApiException
-from ocean_utils.utils.utilities import generate_new_id
+
 
 from operator_service.config import Config
 from operator_service.data_store import create_sql_job, get_sql_status, get_sql_jobs, stop_sql_job, remove_sql_job
 from operator_service.kubernetes_api import KubeAPI
-from operator_service.utils import create_compute_job, check_required_attributes
+from operator_service.utils import create_compute_job, check_required_attributes , generate_new_id
 
 services = Blueprint('services', __name__)
 
