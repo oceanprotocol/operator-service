@@ -6,11 +6,10 @@ import kubernetes
 from flask import Blueprint, jsonify, request
 from kubernetes.client.rest import ApiException
 
-
 from operator_service.config import Config
 from operator_service.data_store import create_sql_job, get_sql_status, get_sql_jobs, stop_sql_job, remove_sql_job
 from operator_service.kubernetes_api import KubeAPI
-from operator_service.utils import create_compute_job, check_required_attributes , generate_new_id
+from operator_service.utils import create_compute_job, check_required_attributes, generate_new_id
 
 services = Blueprint('services', __name__)
 
@@ -105,18 +104,32 @@ def start_compute_job():
     """
 
     data = request.json
+    workflow = data.get('workflow')
+    if not workflow:
+        return f'`workflow` is required in the payload and must ' \
+               f'include workflow stages, agreementId, and owner', 400
     required_attributes = [
         'stages',
         'agreementId',
         'owner',
     ]
-    msg, status = check_required_attributes(required_attributes, data, 'POST:/compute')
+    msg, status = check_required_attributes(required_attributes, workflow, 'POST:/compute')
     if msg:
         return msg, status
 
     agreement_id = data.get('agreementId')
     owner = data.get('owner')
     stages = data.get('stages')
+
+    # verify provider's signature
+    # allowed_providers = get_list_of_allowed_providers()
+    # signature = data.get('signature')
+    # if not signature:
+    #     return f'`signature` is required (signed agreementId by the provider ethereum account)', 400
+    # try:
+    #     verify_signature(Keeper, signature, agreement_id, allowed_providers)
+    # except InvalidSignatureError as e:
+    #     return f'{e}', 401
 
     if not stages:
         logging.error(f'Missing stages')

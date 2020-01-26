@@ -14,7 +14,7 @@ with open('CHANGELOG.md') as history_file:
     history = history_file.read()
 
 install_requirements = [
-    'ocean-utils==0.3.4',
+    'ocean-keeper==0.3.3',
     'coloredlogs==10.0',
     'Flask==1.0.2',
     'Flask-Cors==3.0.6',

@@ -1,6 +1,8 @@
 import uuid
 import logging
 
+from operator_service.exceptions import InvalidSignatureError
+
 logger = logging.getLogger(__name__)
 
 
@@ -10,6 +12,7 @@ def generate_new_id():
     :return: Id, str
     """
     return uuid.uuid4().hex
+
 
 def create_compute_job(workflow, execution_id, group, version, namespace):
     execution = dict()
@@ -38,3 +41,17 @@ def check_required_attributes(required_attributes, data, method):
             return '"%s" is required in the call to %s' % (attr, method), 400
 
     return None, None
+
+
+def verify_signature(keeper, signature, original_msg, allowed_addresses):
+    address = keeper.personal_ec_recover(original_msg, signature)
+    if address.lower() in allowed_addresses:
+        return
+
+    msg = f'Invalid signature {signature} of documentId {original_msg},' \
+          f'the signing ethereum account {address} is not authorized to use this service.'
+    raise InvalidSignatureError(msg)
+
+
+def get_list_of_allowed_providers():
+    return []
