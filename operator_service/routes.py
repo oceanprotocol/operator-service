@@ -40,62 +40,65 @@ def start_compute_job():
           workflow:
           nullable: true
           example: {
-                          "agreementId":"0xACBd138aBD70e2F00903268F3Db08f2D25677C9e",
-                          "owner":"0xC41808BBef371AD5CFc76466dDF9dEe228d2BdAA",
-                          "stages": [
-                            {
-                              "index": 0,
-                              "input": [
-                                  {
-                                      "id": "did:op:87bdaabb33354d2eb014af5091c604fb4b0f67dc6cca4d18a96547bffdc27bcf",
-                                      "url": [
-                                          "https://data.ok.gov/sites/default/files/unspsc%20codes_3.csv"
-                                      ],
-                                      "index": 0
-                                  },
-                                  {
-                                      "id": "did:op:1384941e6f0b46299b6e515723df3d8e8e5d1fb175554467a1cb7bc613f5c72e",
-                                      "url": [
-                                          "https://data.ct.gov/api/views/2fi9-sgi3/rows.csv?accessType=DOWNLOAD"
-                                      ],
-                                      "index": 1
+                        "agreementId":"0x111111",
+                        "owner":"0xC41808BBef371AD5CFc76466dDF9dEe228d2BdAA",
+                        "signature":"ae01",
+                        "workflow":{
+                            "stages": [
+                              {
+                                "index": 0,
+                                "input": [
+                                    {
+                                        "id": "did:op:87bdaabb33354d2eb014af5091c604fb4b0f67dc6cca4d18a96547bffdc27bcf",
+                                        "url": [
+                                            "https://data.ok.gov/sites/default/files/unspsc%20codes_3.csv"
+                                        ],
+                                        "index": 0
+                                    },
+                                    {
+                                        "id": "did:op:1384941e6f0b46299b6e515723df3d8e8e5d1fb175554467a1cb7bc613f5c72e",
+                                        "url": [
+                                            "https://data.ct.gov/api/views/2fi9-sgi3/rows.csv?accessType=DOWNLOAD"
+                                        ],
+                                        "index": 1
+                                    }
+                                ],
+                                "compute": {
+                                    "Instances": 1,
+                                    "namespace": "withgpu",
+                                    "maxtime": 3600
+                                },
+                                "algorithm": {
+                                    "id": "did:op:87bdaabb33354d2eb014af5091c604fb4b0f67dc6cca4d18a96547bffdc27bcf",
+                                    "url": "https://raw.githubusercontent.com/oceanprotocol/test-algorithm/master/javascript/algo.js",
+                                    "rawcode": "console.log('this is a test')",
+                                    "container": {
+                                        "image": "node",
+                                        "tag": "10",
+                                        "entrypoint": "node $ALGO"
+                                    }
+                                },
+                                "output": {
+                                    "nodeUri": "https://nile.dev-ocean.com",
+                                    "brizoUrl": "https://brizo.marketplace.dev-ocean.com",
+                                    "brizoAddress": "0x4aaab179035dc57b35e2ce066919048686f82972",
+                                    "metadata": {
+                                        "name": "Workflow output"
+                                    },
+                                    "metadataUrl": "https://aquarius.marketplace.dev-ocean.com",
+                                    "secretStoreUrl": "https://secret-store.nile.dev-ocean.com",
+                                    "whitelist": [
+                                        "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e",
+                                        "0xACBd138aBD70e2F00903268F3Db08f2D25677C9e"
+                                    ],
+                                    "owner":"0xC41808BBef371AD5CFc76466dDF9dEe228d2BdAA",
+                                    "publishoutput":true,
+                                    "publishalgolog":true
                                   }
-                              ],
-                              "compute": {
-                                  "Instances": 1,
-                                  "namespace": "withgpu",
-                                  "maxtime": 3600
-                              },
-                              "algorithm": {
-                                  "id": "did:op:87bdaabb33354d2eb014af5091c604fb4b0f67dc6cca4d18a96547bffdc27bcf",
-                                  "url": "https://raw.githubusercontent.com/oceanprotocol/test-algorithm/master/javascript/algo.js",
-                                  "rawcode": "console.log('this is a test')",
-                                  "container": {
-                                      "image": "node",
-                                      "tag": "10",
-                                      "entrypoint": "node $ALGO"
-                                  }
-                              },
-                              "output": {
-                                  "nodeUri": "https://nile.dev-ocean.com",
-                                  "brizoUrl": "https://brizo.marketplace.dev-ocean.com",
-                                  "brizoAddress": "0x4aaab179035dc57b35e2ce066919048686f82972",
-                                  "metadata": {
-                                      "name": "Workflow output"
-                                  },
-                                  "metadataUrl": "https://aquarius.marketplace.dev-ocean.com",
-                                  "secretStoreUrl": "https://secret-store.nile.dev-ocean.com",
-                                  "whitelist": [
-                                      "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e",
-                                      "0xACBd138aBD70e2F00903268F3Db08f2D25677C9e"
-                                  ],
-                                  "owner":"0xC41808BBef371AD5CFc76466dDF9dEe228d2BdAA",
-                                  "publishoutput":true,
-                                  "publishalgolog":true
-                                }
-                            }
-                          ]
-                      }
+                              }
+                            ]
+                          }
+                        }
     response:
       201:
         description: Workflow inited successfully.
