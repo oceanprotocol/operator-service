@@ -54,4 +54,12 @@ def verify_signature(keeper, signature, original_msg, allowed_addresses):
 
 
 def get_list_of_allowed_providers():
-    return []
+    try:
+        config_allowed_list=json.loads(os.getenv("ALLOWEDPROVIDERS"))
+        if not isinstance(config_allowed_list,list):
+            logger.error('Failed loading ALLOWEDPROVIDERS')
+            return []
+        return config_allowed_list
+    except ApiException as e:
+        logging.error(f'Exception when calling json.loads(os.getenv("ALLOWEDPROVIDERS")): {e}')
+        return []
