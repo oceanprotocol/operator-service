@@ -51,12 +51,12 @@ def get_sql_status(agreement_id, job_id, owner):
         # temprow['publishlogUrl']=row[8]
         temprow['algologUrl'] = row[9]
         temprow['outputsUrl'] = row[10]
-        temprow['resultsDID'] = ''
+        temprow['resultsDid'] = ''
         if row[11] is not None:
             if len(str(row[11]))>2:
                 ddo_json = json.loads(str(row[11]))
                 if 'id' in ddo_json:
-                    temprow['resultsDID'] = ddo_json['id']
+                    temprow['resultsDid'] = ddo_json['id']
         temprow['stopreq'] = row[12]
         temprow['removed'] = row[13]
         result.append(temprow)
