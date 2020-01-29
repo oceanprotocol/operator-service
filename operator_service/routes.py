@@ -106,7 +106,7 @@ def start_compute_job():
         description: Some error
     """
 
-    data = request.json
+    data = request.args if request.args else request.json
     required_attributes = [
         'workflow',
         'agreementId',
@@ -196,7 +196,7 @@ def stop_compute_job():
         type: string
     """
     try:
-        data = request.args
+        data = request.args if request.args else request.json
 
         agreement_id = data.get('agreementId')
         owner = data.get('owner')
@@ -267,7 +267,7 @@ def delete_compute_job():
     # default policy is decided by the existing finalizer set in the metadata.finalizers and the
     # resource-specific default policy. (optional)
     try:
-        data = request.args
+        data = request.args if request.args else request.json
         agreement_id = data.get('agreementId')
         owner = data.get('owner')
         job_id = data.get('jobId')
@@ -338,7 +338,7 @@ def get_compute_job_status():
         description: Error
     """
     try:
-        data = request.args
+        data = request.args if request.args else request.json
         agreement_id = data.get('agreementId')
         owner = data.get('owner')
         job_id = data.get('jobId')
