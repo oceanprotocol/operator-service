@@ -92,8 +92,8 @@ def start_compute_job():
                                         "0xACBd138aBD70e2F00903268F3Db08f2D25677C9e"
                                     ],
                                     "owner":"0xC41808BBef371AD5CFc76466dDF9dEe228d2BdAA",
-                                    "publishoutput":true,
-                                    "publishalgolog":true
+                                    "publishOutput":true,
+                                    "publishAlgorithmLog":true
                                   }
                               }
                             ]
