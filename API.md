@@ -62,8 +62,8 @@ Parameters
                             "0xACBd138aBD70e2F00903268F3Db08f2D25677C9e"
               ],
               "owner":""https://gishubdata.nd.gov/sites/default/files/NDHUB.Roads_MileMarkers_1.csv"",
-              "publishoutput":true,
-              "publishalgolog":true
+              "publishOutput":true,
+              "publishAlgorithmLog":true
             }
           }
         ]
