@@ -62,8 +62,8 @@ Parameters
                             "0xACBd138aBD70e2F00903268F3Db08f2D25677C9e"
               ],
               "owner":""https://gishubdata.nd.gov/sites/default/files/NDHUB.Roads_MileMarkers_1.csv"",
-              "publishoutput":true,
-              "publishalgolog":true
+              "publishOutput":true,
+              "publishAlgorithmLog":true
             }
           }
         ]
@@ -110,8 +110,7 @@ An Array of status objects, each object describing a workflow. If the array is e
         publishlogUrl: URL to get the publish log (for admins only)
         algologUrl: URL to get the algo log (for user)
         outputsUrl: Array of URLs for algo outputs
-        ddo: only if there was a publishing request
-        did: if we have a ddo
+        resultsDid: if we have a did
         stopreq: 0 - None, 1 - API Enpoint Stop called, 2 - Job exceeded allocated time
         removed: 0 - No, 1 - Removed from k8 cluster
 ```
@@ -155,7 +154,8 @@ Output:
             "http://example.net/logs/output/0",
             "http://example.net/logs/output/1"
             }
-         ]
+         ],
+         "resultsDid":"did:op:87bdaabb33354d2eb014af5091c604fb4b0f67dc6cca4d18a96547bffdc27bcf"
        },
        {
         "owner":"0x1111",
@@ -173,7 +173,8 @@ Output:
             "http://example.net/logs2/output/0",
             "http://example.net/logs2/output/1"
             }
-         ]
+         ],
+         "resultsDid":""
        }
  ]
  ```
