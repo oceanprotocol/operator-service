@@ -80,13 +80,13 @@ def start_compute_job():
                                 },
                                 "output": {
                                     "nodeUri": "https://nile.dev-ocean.com",
-                                    "brizoUrl": "https://brizo.marketplace.dev-ocean.com",
+                                    "brizoUri": "https://brizo.marketplace.dev-ocean.com",
                                     "brizoAddress": "0x4aaab179035dc57b35e2ce066919048686f82972",
                                     "metadata": {
                                         "name": "Workflow output"
                                     },
-                                    "metadataUrl": "https://aquarius.marketplace.dev-ocean.com",
-                                    "secretStoreUrl": "https://secret-store.nile.dev-ocean.com",
+                                    "metadataUri": "https://aquarius.marketplace.dev-ocean.com",
+                                    "secretStoreUri": "https://secret-store.nile.dev-ocean.com",
                                     "whitelist": [
                                         "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e",
                                         "0xACBd138aBD70e2F00903268F3Db08f2D25677C9e"
