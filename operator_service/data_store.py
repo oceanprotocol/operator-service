@@ -50,12 +50,13 @@ def get_sql_status(agreement_id, job_id, owner):
         # temprow['configlogUrl']=row[7]
         # temprow['publishlogUrl']=row[8]
         temprow['algologUrl'] = row[9]
-        temprow['outputsUrl'] = row[10]
+        temprow['outputsUrl'] = ''
+        if row[10] and len(str(row[10])) > 2:
+            temprow['outputsUrl'] = json.loads(str(row[10]))
         temprow['resultsDid'] = ''
         if row[11] and len(str(row[11])) > 2:
             ddo_json = json.loads(str(row[11]))
             temprow['resultsDid'] = ddo_json.get('id', '')
-
         temprow['stopreq'] = row[12]
         temprow['removed'] = row[13]
         result.append(temprow)
