@@ -1,5 +1,9 @@
+import json
+import os
 import uuid
 import logging
+
+from kubernetes.client.rest import ApiException
 
 from operator_service.exceptions import InvalidSignatureError
 
@@ -55,11 +59,11 @@ def verify_signature(keeper, signature, original_msg, allowed_addresses):
 
 def get_list_of_allowed_providers():
     try:
-        config_allowed_list=json.loads(os.getenv("ALLOWEDPROVIDERS"))
-        if not isinstance(config_allowed_list,list):
-            logger.error('Failed loading ALLOWEDPROVIDERS')
+        config_allowed_list = json.loads(os.getenv("ALLOWED_PROVIDERS"))
+        if not isinstance(config_allowed_list, list):
+            logger.error('Failed loading ALLOWED_PROVIDERS')
             return []
         return config_allowed_list
     except ApiException as e:
-        logging.error(f'Exception when calling json.loads(os.getenv("ALLOWEDPROVIDERS")): {e}')
+        logging.error(f'Exception when calling json.loads(os.getenv("ALLOWED_PROVIDERS")): {e}')
         return []

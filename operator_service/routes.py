@@ -5,11 +5,14 @@ import logging
 import kubernetes
 from flask import Blueprint, jsonify, request
 from kubernetes.client.rest import ApiException
+from ocean_keeper import Keeper
 
 from operator_service.config import Config
 from operator_service.data_store import create_sql_job, get_sql_status, get_sql_jobs, stop_sql_job, remove_sql_job
+from operator_service.exceptions import InvalidSignatureError
 from operator_service.kubernetes_api import KubeAPI
-from operator_service.utils import create_compute_job, check_required_attributes, generate_new_id
+from operator_service.utils import create_compute_job, check_required_attributes, generate_new_id, get_list_of_allowed_providers, \
+    verify_signature
 
 services = Blueprint('services', __name__)
 
@@ -111,6 +114,7 @@ def start_compute_job():
         'workflow',
         'agreementId',
         'owner',
+        'providerSignature'
     ]
     msg, status = check_required_attributes(required_attributes, data, 'POST:/compute')
     if msg:
@@ -125,13 +129,15 @@ def start_compute_job():
                f'include workflow stages', 400
 
     # verify provider's signature
-    # allowed_providers = get_list_of_allowed_providers()
-    # if not signature:
-    #     return f'`signature` is required (signed agreementId by the provider ethereum account)', 400
-    # try:
-    #     verify_signature(Keeper, signature, agreement_id, allowed_providers)
-    # except InvalidSignatureError as e:
-    #     return f'{e}', 401
+    allowed_providers = get_list_of_allowed_providers()
+    signature = data.get('providerSignature')
+    if not signature:
+        return jsonify(error=f'`providerSignature` of agreementId is required.'), 400
+
+    try:
+        verify_signature(Keeper, signature, agreement_id, allowed_providers)
+    except InvalidSignatureError as e:
+        return f'{e}', 401
 
     stages = workflow.get('stages')
     if not stages:
@@ -215,15 +221,26 @@ def stop_compute_job():
             msg = f'You have to specify one of agreementId, jobId or owner'
             logging.error(msg)
             return jsonify(error=msg), 400
-        else:
-            jobs_list = get_sql_jobs(agreement_id, job_id, owner)
-            for ajob in jobs_list:
-                name = ajob
-                logging.info(f'Stopping job : {name}')
-                stop_sql_job(name)
 
-            status_list = get_sql_status(agreement_id, job_id, owner)
-            return jsonify(status_list), 200
+        # verify provider's signature
+        allowed_providers = get_list_of_allowed_providers()
+        signature = data.get('providerSignature')
+        if not signature:
+            return jsonify(error=f'`providerSignature` of agreementId is required.'), 400
+
+        try:
+            verify_signature(Keeper, signature, agreement_id, allowed_providers)
+        except InvalidSignatureError as e:
+            return f'{e}', 401
+
+        jobs_list = get_sql_jobs(agreement_id, job_id, owner)
+        for ajob in jobs_list:
+            name = ajob
+            logging.info(f'Stopping job : {name}')
+            stop_sql_job(name)
+
+        status_list = get_sql_status(agreement_id, job_id, owner)
+        return jsonify(status_list), 200
 
     except ApiException as e:
         logging.error(f'Exception when stopping compute job: {e}')
@@ -285,21 +302,32 @@ def delete_compute_job():
             msg = f'You have to specify one of agreementId, jobId or owner'
             logging.error(msg)
             return jsonify(error=msg), 400
-        else:
-            kube_api = KubeAPI(config)
-            jobs_list = get_sql_jobs(agreement_id, job_id, owner)
-            for ajob in jobs_list:
-                name = ajob
-                logging.info(f'Deleting job : {name}')
-                remove_sql_job(name)
-                api_response = kube_api.delete_namespaced_custom_object(
-                    name,
-                    body,
-                    grace_period_seconds=grace_period_seconds,
-                    orphan_dependents=orphan_dependents,
-                    propagation_policy=propagation_policy
-                )
-                logging.info(api_response)
+
+        # verify provider's signature
+        allowed_providers = get_list_of_allowed_providers()
+        signature = data.get('providerSignature')
+        if not signature:
+            return jsonify(error=f'`providerSignature` of agreementId is required.'), 400
+
+        try:
+            verify_signature(Keeper, signature, agreement_id, allowed_providers)
+        except InvalidSignatureError as e:
+            return f'{e}', 401
+
+        kube_api = KubeAPI(config)
+        jobs_list = get_sql_jobs(agreement_id, job_id, owner)
+        for ajob in jobs_list:
+            name = ajob
+            logging.info(f'Deleting job : {name}')
+            remove_sql_job(name)
+            api_response = kube_api.delete_namespaced_custom_object(
+                name,
+                body,
+                grace_period_seconds=grace_period_seconds,
+                orphan_dependents=orphan_dependents,
+                propagation_policy=propagation_policy
+            )
+            logging.info(api_response)
 
         status_list = get_sql_status(agreement_id, job_id, owner)
         return jsonify(status_list), 200
@@ -356,10 +384,10 @@ def get_compute_job_status():
             msg = f'You have to specify one of agreementId, jobId or owner'
             logging.error(msg)
             return jsonify(error=msg), 400
-        else:
-            logging.debug("Try to start")
-            api_response = get_sql_status(agreement_id, job_id, owner)
-            return jsonify(api_response), 200
+
+        logging.debug("Try to start")
+        api_response = get_sql_status(agreement_id, job_id, owner)
+        return jsonify(api_response), 200
 
     except ApiException as e:
         msg = f'Error getting the status: {e}'
