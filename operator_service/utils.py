@@ -63,3 +63,15 @@ def get_list_of_allowed_providers():
     except ApiException as e:
         logging.error(f'Exception when calling json.loads(os.getenv("ALLOWEDPROVIDERS")): {e}')
         return []
+
+def get_compute_resources(agreement_id):
+    resources=dict()
+    resources['inputVolumesize']="1Gi"
+    resources['outputVolumesize']="1Gi"
+    resources['adminlogsVolumesize']="1Gi"
+    resources['requests_cpu']="1"
+    resources['requests_memory']="200Mi"
+    resources['limits_cpu']="2"
+    resources['limits_memory']="500Mi"
+    return(resources)
+    

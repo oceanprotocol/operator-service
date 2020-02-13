@@ -9,7 +9,7 @@ from kubernetes.client.rest import ApiException
 from operator_service.config import Config
 from operator_service.data_store import create_sql_job, get_sql_status, get_sql_jobs, stop_sql_job, remove_sql_job
 from operator_service.kubernetes_api import KubeAPI
-from operator_service.utils import create_compute_job, check_required_attributes, generate_new_id
+from operator_service.utils import create_compute_job, check_required_attributes, generate_new_id, get_compute_resources
 
 services = Blueprint('services', __name__)
 
@@ -142,15 +142,20 @@ def start_compute_job():
         if _attr not in stages[0]:
             logging.error(f'Missing algorithm in stage')
             return jsonify(error=f'Missing {_attr} in stage 0'), 400
-
-    # check timeouts
+    # loop through stages and add resources
     timeout = int(os.getenv("ALGOPODTIMEOUT", 0))
-    if timeout > 0:
-        if 'maxtime' in stages[0]['compute']:
-            maxtime = int(stages[0]['compute']['maxtime'])
-            if timeout < maxtime:
-                stages[0]['compute']['maxtime'] = timeout
+    for count, astage in enumerate(workflow['stages']):
+    # check timeouts
+        if timeout > 0:
+            if 'maxtime' in workflow['stages'][count]['compute']:
+                maxtime = int(workflow['stages'][count]['compute']['maxtime'])
+            else:
+                maxtime = 0
+            if (timeout < maxtime) or (maxtime<=0 and timeout>0):
+                workflow['stages'][count]['compute']['maxtime'] = timeout
                 logging.debug(f"Maxtime in workflow was {maxtime}. Overwritten to {timeout}")
+        # get resources
+        workflow['stages'][count]['compute']['resources'] = get_compute_resources(agreement_id)
 
     job_id = generate_new_id()
     logging.debug(f'Got job_id: {job_id}')
