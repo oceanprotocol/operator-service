@@ -52,7 +52,7 @@ spec:
             configMapKeyRef:
               key: POSTGRES_PORT
               name: postgres-config
-        image: alexdevel:5000/operator-service:latest
+        image: oceanprotocol/operator-service:latest
         imagePullPolicy: Always
         name: operator-api
         ports:
