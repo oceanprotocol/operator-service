@@ -143,7 +143,7 @@ def start_compute_job():
             logging.error(f'Missing algorithm in stage')
             return jsonify(error=f'Missing {_attr} in stage 0'), 400
     # loop through stages and add resources
-    timeout = int(os.getenv("ALGOPODTIMEOUT", 0))
+    timeout = int(os.getenv("ALGO_POD_TIMEOUT", 0))
     for count, astage in enumerate(workflow['stages']):
     # check timeouts
         if timeout > 0:
