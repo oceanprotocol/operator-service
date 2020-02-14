@@ -9,7 +9,13 @@ from kubernetes.client.rest import ApiException
 from operator_service.config import Config
 from operator_service.data_store import create_sql_job, get_sql_status, get_sql_jobs, stop_sql_job, remove_sql_job
 from operator_service.kubernetes_api import KubeAPI
-from operator_service.utils import create_compute_job, check_required_attributes, generate_new_id, get_compute_resources
+from operator_service.utils import (
+    create_compute_job,
+    check_required_attributes,
+    generate_new_id,
+    process_signature_validation,
+    get_compute_resources
+)
 
 services = Blueprint('services', __name__)
 
@@ -111,32 +117,28 @@ def start_compute_job():
         'workflow',
         'agreementId',
         'owner',
+        'providerSignature'
     ]
     msg, status = check_required_attributes(required_attributes, data, 'POST:/compute')
     if msg:
-        return msg, status
+        return jsonify(error=msg), status
 
     workflow = data.get('workflow')
     agreement_id = data.get('agreementId')
     owner = data.get('owner')
-    # signature = data.get('signature')
     if not workflow:
-        return f'`workflow` is required in the payload and must ' \
-               f'include workflow stages', 400
+        return jsonify(error=f'`workflow` is required in the payload and must '
+                       f'include workflow stages'), 400
 
     # verify provider's signature
-    # allowed_providers = get_list_of_allowed_providers()
-    # if not signature:
-    #     return f'`signature` is required (signed agreementId by the provider ethereum account)', 400
-    # try:
-    #     verify_signature(Keeper, signature, agreement_id, allowed_providers)
-    # except InvalidSignatureError as e:
-    #     return f'{e}', 401
+    msg, status = process_signature_validation(data.get('providerSignature'), agreement_id)
+    if msg:
+        return jsonify(error=f'`providerSignature` of agreementId is required.'), status
 
     stages = workflow.get('stages')
     if not stages:
         logging.error(f'Missing stages')
-        return 'Missing stages', 400
+        return jsonify(error='Missing stages'), 400
 
     for _attr in ('algorithm', 'compute', 'input', 'output'):
         if _attr not in stages[0]:
@@ -145,7 +147,7 @@ def start_compute_job():
     # loop through stages and add resources
     timeout = int(os.getenv("ALGO_POD_TIMEOUT", 0))
     for count, astage in enumerate(workflow['stages']):
-    # check timeouts
+        # check timeouts
         if timeout > 0:
             if 'maxtime' in astage['compute']:
                 maxtime = int(astage['compute']['maxtime'])
@@ -174,7 +176,7 @@ def start_compute_job():
 
     except ApiException as e:
         logging.error(f'Exception when calling CustomObjectsApi->create_namespaced_custom_object: {e}')
-        return 'Unable to create job', 400
+        return jsonify(error='Unable to create job'), 400
 
 
 @services.route('/compute', methods=['PUT'])
@@ -220,19 +222,23 @@ def stop_compute_job():
             msg = f'You have to specify one of agreementId, jobId or owner'
             logging.error(msg)
             return jsonify(error=msg), 400
-        else:
-            jobs_list = get_sql_jobs(agreement_id, job_id, owner)
-            for ajob in jobs_list:
-                name = ajob
-                logging.info(f'Stopping job : {name}')
-                stop_sql_job(name)
 
-            status_list = get_sql_status(agreement_id, job_id, owner)
-            return jsonify(status_list), 200
+        msg, status = process_signature_validation(data.get('providerSignature'), agreement_id)
+        if msg:
+            return jsonify(error=f'`providerSignature` of agreementId is required.'), status
+
+        jobs_list = get_sql_jobs(agreement_id, job_id, owner)
+        for ajob in jobs_list:
+            name = ajob
+            logging.info(f'Stopping job : {name}')
+            stop_sql_job(name)
+
+        status_list = get_sql_status(agreement_id, job_id, owner)
+        return jsonify(status_list), 200
 
     except ApiException as e:
         logging.error(f'Exception when stopping compute job: {e}')
-        return f'Error stopping job: {e}', 400
+        return jsonify(error=f'Error stopping job: {e}'), 400
 
 
 @services.route('/compute', methods=['DELETE'])
@@ -290,21 +296,25 @@ def delete_compute_job():
             msg = f'You have to specify one of agreementId, jobId or owner'
             logging.error(msg)
             return jsonify(error=msg), 400
-        else:
-            kube_api = KubeAPI(config)
-            jobs_list = get_sql_jobs(agreement_id, job_id, owner)
-            logging.debug(f'Got {jobs_list}')
-            for ajob in jobs_list:
-                name = ajob
-                remove_sql_job(name)
-                api_response = kube_api.delete_namespaced_custom_object(
-                    name,
-                    body,
-                    grace_period_seconds=grace_period_seconds,
-                    orphan_dependents=orphan_dependents,
-                    propagation_policy=propagation_policy
-                )
-                logging.debug(api_response)
+
+        msg, status = process_signature_validation(data.get('providerSignature'), agreement_id)
+        if msg:
+            return jsonify(error=f'`providerSignature` of agreementId is required.'), status
+
+        kube_api = KubeAPI(config)
+        jobs_list = get_sql_jobs(agreement_id, job_id, owner)
+        for ajob in jobs_list:
+            name = ajob
+            logging.debug(f'Deleting job : {name}')
+            remove_sql_job(name)
+            api_response = kube_api.delete_namespaced_custom_object(
+                name,
+                body,
+                grace_period_seconds=grace_period_seconds,
+                orphan_dependents=orphan_dependents,
+                propagation_policy=propagation_policy
+            )
+            logging.debug(api_response)
 
         status_list = get_sql_status(agreement_id, job_id, owner)
         return jsonify(status_list), 200
@@ -361,12 +371,12 @@ def get_compute_job_status():
             msg = f'You have to specify one of agreementId, jobId or owner'
             logging.error(msg)
             return jsonify(error=msg), 400
-        else:
-            logging.debug("Try to start")
-            api_response = get_sql_status(agreement_id, job_id, owner)
-            return jsonify(api_response), 200
+
+        logging.debug("Try to start")
+        api_response = get_sql_status(agreement_id, job_id, owner)
+        return jsonify(api_response), 200
 
     except ApiException as e:
         msg = f'Error getting the status: {e}'
         logging.error(msg)
-        return msg, 400
+        return jsonify(error=msg), 400

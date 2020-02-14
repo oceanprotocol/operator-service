@@ -1,5 +1,10 @@
+import json
+import os
 import uuid
 import logging
+
+from kubernetes.client.rest import ApiException
+from ocean_keeper import Keeper
 
 from operator_service.exceptions import InvalidSignatureError
 
@@ -43,6 +48,19 @@ def check_required_attributes(required_attributes, data, method):
     return None, None
 
 
+def process_signature_validation(signature, original_msg):
+    if is_verify_signature_required():
+        # verify provider's signature
+        allowed_providers = get_list_of_allowed_providers()
+        if not signature:
+            return f'`providerSignature` of agreementId is required.', 400
+
+        try:
+            verify_signature(Keeper, signature, original_msg, allowed_providers)
+        except InvalidSignatureError as e:
+            return f'{e}', 401
+
+
 def verify_signature(keeper, signature, original_msg, allowed_addresses):
     address = keeper.personal_ec_recover(original_msg, signature)
     if address.lower() in allowed_addresses:
@@ -55,17 +73,24 @@ def verify_signature(keeper, signature, original_msg, allowed_addresses):
 
 def get_list_of_allowed_providers():
     try:
-        config_allowed_list=json.loads(os.getenv("ALLOWEDPROVIDERS"))
-        if not isinstance(config_allowed_list,list):
-            logger.error('Failed loading ALLOWEDPROVIDERS')
+        config_allowed_list = json.loads(os.getenv("ALLOWED_PROVIDERS"))
+        if not isinstance(config_allowed_list, list):
+            logger.error('Failed loading ALLOWED_PROVIDERS')
             return []
         return config_allowed_list
     except ApiException as e:
-        logging.error(f'Exception when calling json.loads(os.getenv("ALLOWEDPROVIDERS")): {e}')
+        logging.error(f'Exception when calling json.loads(os.getenv("ALLOWED_PROVIDERS")): {e}')
         return []
 
 
-def get_compute_resources(agreement_id):
+def is_verify_signature_required():
+    try:
+        return bool(int(os.environ.get('SIGNATURE_REQUIRED', 0)) == 1)
+    except ValueError:
+        return False
+
+
+def get_compute_resources():
     resources = dict()
     resources['inputVolumesize'] = "1Gi"
     resources['outputVolumesize'] = "1Gi"
@@ -74,4 +99,4 @@ def get_compute_resources(agreement_id):
     resources['requests_memory'] = "200Mi"
     resources['limits_cpu'] = "2"
     resources['limits_memory'] = "500Mi"
-    return resources 
+    return resources
