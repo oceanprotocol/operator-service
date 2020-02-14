@@ -120,14 +120,14 @@ def start_compute_job():
     ]
     msg, status = check_required_attributes(required_attributes, data, 'POST:/compute')
     if msg:
-        return msg, status
+        return jsonify(error=msg), status
 
     workflow = data.get('workflow')
     agreement_id = data.get('agreementId')
     owner = data.get('owner')
     if not workflow:
-        return f'`workflow` is required in the payload and must ' \
-               f'include workflow stages', 400
+        return jsonify(error=f'`workflow` is required in the payload and must '
+                       f'include workflow stages'), 400
 
     # verify provider's signature
     msg, status = process_signature_validation(data.get('providerSignature'), agreement_id)
@@ -137,7 +137,7 @@ def start_compute_job():
     stages = workflow.get('stages')
     if not stages:
         logging.error(f'Missing stages')
-        return 'Missing stages', 400
+        return jsonify(error='Missing stages'), 400
 
     for _attr in ('algorithm', 'compute', 'input', 'output'):
         if _attr not in stages[0]:
@@ -170,7 +170,7 @@ def start_compute_job():
 
     except ApiException as e:
         logging.error(f'Exception when calling CustomObjectsApi->create_namespaced_custom_object: {e}')
-        return 'Unable to create job', 400
+        return jsonify(error='Unable to create job'), 400
 
 
 @services.route('/compute', methods=['PUT'])
@@ -373,4 +373,4 @@ def get_compute_job_status():
     except ApiException as e:
         msg = f'Error getting the status: {e}'
         logging.error(msg)
-        return msg, 400
+        return jsonify(error=msg), 400
