@@ -147,15 +147,15 @@ def start_compute_job():
     for count, astage in enumerate(workflow['stages']):
     # check timeouts
         if timeout > 0:
-            if 'maxtime' in workflow['stages'][count]['compute']:
-                maxtime = int(workflow['stages'][count]['compute']['maxtime'])
+            if 'maxtime' in astage['compute']:
+                maxtime = int(astage['compute']['maxtime'])
             else:
                 maxtime = 0
-            if (timeout < maxtime) or (maxtime<=0 and timeout>0):
-                workflow['stages'][count]['compute']['maxtime'] = timeout
+            if timeout < maxtime or maxtime <= 0:
+                astage['compute']['maxtime'] = timeout
                 logging.debug(f"Maxtime in workflow was {maxtime}. Overwritten to {timeout}")
         # get resources
-        workflow['stages'][count]['compute']['resources'] = get_compute_resources(agreement_id)
+        astage['compute']['resources'] = get_compute_resources(agreement_id)
 
     job_id = generate_new_id()
     logging.debug(f'Got job_id: {job_id}')

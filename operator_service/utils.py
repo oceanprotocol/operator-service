@@ -64,6 +64,7 @@ def get_list_of_allowed_providers():
         logging.error(f'Exception when calling json.loads(os.getenv("ALLOWEDPROVIDERS")): {e}')
         return []
 
+
 def get_compute_resources(agreement_id):
     resources=dict()
     resources['inputVolumesize']="1Gi"
@@ -73,5 +74,4 @@ def get_compute_resources(agreement_id):
     resources['requests_memory']="200Mi"
     resources['limits_cpu']="2"
     resources['limits_memory']="500Mi"
-    return(resources)
-    
+    return resources 
