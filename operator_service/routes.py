@@ -146,6 +146,7 @@ def start_compute_job():
             return jsonify(error=f'Missing {_attr} in stage 0'), 400
     # loop through stages and add resources
     timeout = int(os.getenv("ALGO_POD_TIMEOUT", 0))
+    compute_resources_def = get_compute_resources()
     for count, astage in enumerate(workflow['stages']):
         # check timeouts
         if timeout > 0:
@@ -157,7 +158,7 @@ def start_compute_job():
                 astage['compute']['maxtime'] = timeout
                 logging.debug(f"Maxtime in workflow was {maxtime}. Overwritten to {timeout}")
         # get resources
-        astage['compute']['resources'] = get_compute_resources(agreement_id)
+        astage['compute']['resources'] = compute_resources_def
 
     job_id = generate_new_id()
     logging.debug(f'Got job_id: {job_id}')
