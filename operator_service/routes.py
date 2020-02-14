@@ -293,7 +293,7 @@ def delete_compute_job():
         else:
             kube_api = KubeAPI(config)
             jobs_list = get_sql_jobs(agreement_id, job_id, owner)
-            logging.error(f'Got {jobs_list}')
+            logging.debug(f'Got {jobs_list}')
             for ajob in jobs_list:
                 name = ajob
                 remove_sql_job(name)
