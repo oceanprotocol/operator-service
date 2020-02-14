@@ -25,6 +25,8 @@ spec:
     spec:
       containers:
       - env:
+        - name: ALGOPODTIMEOUT
+          value: "60"
         - name: POSTGRES_DB
           valueFrom:
             configMapKeyRef:
@@ -50,7 +52,7 @@ spec:
             configMapKeyRef:
               key: POSTGRES_PORT
               name: postgres-config
-        image: oceanprotocol/operator-service:latest
+        image: alexdevel:5000/operator-service:latest
         imagePullPolicy: Always
         name: operator-api
         ports:
