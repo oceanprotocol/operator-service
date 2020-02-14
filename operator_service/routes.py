@@ -293,9 +293,9 @@ def delete_compute_job():
         else:
             kube_api = KubeAPI(config)
             jobs_list = get_sql_jobs(agreement_id, job_id, owner)
+            logging.error(f'Got {jobs_list}')
             for ajob in jobs_list:
                 name = ajob
-                logging.info(f'Deleting job : {name}')
                 remove_sql_job(name)
                 api_response = kube_api.delete_namespaced_custom_object(
                     name,
@@ -304,7 +304,7 @@ def delete_compute_job():
                     orphan_dependents=orphan_dependents,
                     propagation_policy=propagation_policy
                 )
-                logging.info(api_response)
+                logging.debug(api_response)
 
         status_list = get_sql_status(agreement_id, job_id, owner)
         return jsonify(status_list), 200
