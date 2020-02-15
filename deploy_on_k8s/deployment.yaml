@@ -25,6 +25,8 @@ spec:
     spec:
       containers:
       - env:
+        - name: ALGO_POD_TIMEOUT
+          value: "60"
         - name: POSTGRES_DB
           valueFrom:
             configMapKeyRef:

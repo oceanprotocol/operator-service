@@ -13,7 +13,8 @@ from operator_service.utils import (
     create_compute_job,
     check_required_attributes,
     generate_new_id,
-    process_signature_validation
+    process_signature_validation,
+    get_compute_resources
 )
 
 services = Blueprint('services', __name__)
@@ -143,15 +144,21 @@ def start_compute_job():
         if _attr not in stages[0]:
             logging.error(f'Missing algorithm in stage')
             return jsonify(error=f'Missing {_attr} in stage 0'), 400
-
-    # check timeouts
-    timeout = int(os.getenv("ALGOPODTIMEOUT", 0))
-    if timeout > 0:
-        if 'maxtime' in stages[0]['compute']:
-            maxtime = int(stages[0]['compute']['maxtime'])
-            if timeout < maxtime:
-                stages[0]['compute']['maxtime'] = timeout
+    # loop through stages and add resources
+    timeout = int(os.getenv("ALGO_POD_TIMEOUT", 0))
+    compute_resources_def = get_compute_resources()
+    for count, astage in enumerate(workflow['stages']):
+        # check timeouts
+        if timeout > 0:
+            if 'maxtime' in astage['compute']:
+                maxtime = int(astage['compute']['maxtime'])
+            else:
+                maxtime = 0
+            if timeout < maxtime or maxtime <= 0:
+                astage['compute']['maxtime'] = timeout
                 logging.debug(f"Maxtime in workflow was {maxtime}. Overwritten to {timeout}")
+        # get resources
+        astage['compute']['resources'] = compute_resources_def
 
     job_id = generate_new_id()
     logging.debug(f'Got job_id: {job_id}')
@@ -299,7 +306,7 @@ def delete_compute_job():
         jobs_list = get_sql_jobs(agreement_id, job_id, owner)
         for ajob in jobs_list:
             name = ajob
-            logging.info(f'Deleting job : {name}')
+            logging.debug(f'Deleting job : {name}')
             remove_sql_job(name)
             api_response = kube_api.delete_namespaced_custom_object(
                 name,
@@ -308,7 +315,7 @@ def delete_compute_job():
                 orphan_dependents=orphan_dependents,
                 propagation_policy=propagation_policy
             )
-            logging.info(api_response)
+            logging.debug(api_response)
 
         status_list = get_sql_status(agreement_id, job_id, owner)
         return jsonify(status_list), 200

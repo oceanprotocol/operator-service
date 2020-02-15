@@ -77,13 +77,16 @@ def get_sql_jobs(agreement_id, job_id, owner):
     if owner is not None:
         select_query = select_query + " AND owner=%(owner)s"
         params['owner'] = str(owner)
-    logging.error(f'Got select_query: {select_query}')
-    logging.error(f'Got params: {params}')
-    rows = _execute_query(select_query, params, 'get_sql_jobs', get_rows=True)
-    if not rows:
+    logging.debug(f'Got select_query: {select_query}')
+    logging.debug(f'Got params: {params}')
+    try:
+        rows = _execute_query(select_query, params, 'get_sql_jobs', get_rows=True)
+        if not rows:
+            return
+        return [row[0] for row in rows]
+    except (Exception, psycopg2.Error) as error:
+        logging.error(f'PG query error: {error}')
         return
-
-    return [row[0] for row in rows]
 
 
 def create_sql_job(agreement_id, job_id, owner):

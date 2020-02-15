@@ -88,3 +88,15 @@ def is_verify_signature_required():
         return bool(int(os.environ.get('SIGNATURE_REQUIRED', 0)) == 1)
     except ValueError:
         return False
+
+
+def get_compute_resources():
+    resources = dict()
+    resources['inputVolumesize'] = "1Gi"
+    resources['outputVolumesize'] = "1Gi"
+    resources['adminlogsVolumesize'] = "1Gi"
+    resources['requests_cpu'] = "1"
+    resources['requests_memory'] = "200Mi"
+    resources['limits_cpu'] = "2"
+    resources['limits_memory'] = "500Mi"
+    return resources
