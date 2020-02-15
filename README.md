@@ -110,12 +110,14 @@ $ curl -X GET "http://localhost:8050/api/v1/operator/list" -H "accept: applicati
 
 ### ENV Vars
 
-     ALGOPODTIMEOUT  = the maximum amount of time in seconds that an algorithm can use before it it killed
+     ALGO_POD_TIMEOUT  = the maximum amount of time in seconds that an algorithm can use before it it killed
      POSTGRES_DB = Postgres database
      POSTGRES_USER = Postgresql user
      POSTGRES_PASSWORD = Postgresql password
      POSTGRES_HOST = Postgresql host
      POSTGRES_PORT = Postgresql port
+     SIGNATURE_REQUIRED = 0 -> no signature required, 1 -> request brizo signature
+     ALLOWED_PROVIDERS = Json array with allowed providers that can access the endpoints
 
 ### Testing
 
