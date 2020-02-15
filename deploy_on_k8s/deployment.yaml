@@ -27,6 +27,10 @@ spec:
       - env:
         - name: ALGO_POD_TIMEOUT
           value: "60"
+        - name: SIGNATURE_REQUIRED
+          value: "0"
+        - name: ALLOWED_PROVIDERS
+          value: "{}"
         - name: POSTGRES_DB
           valueFrom:
             configMapKeyRef:
