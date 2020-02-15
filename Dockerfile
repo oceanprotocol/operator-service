@@ -28,6 +28,8 @@ ENV OPERATOR_URL='http://0.0.0.0:8050'
 # docker-entrypoint.sh configuration file variables
 ENV OPERATOR_WORKERS='1'
 ENV OPERATOR_TIMEOUT='9000'
+ENV ALLOWED_PROVIDERS={}
+ENV SIGNATURE_REQUIRED=0
 
 ENTRYPOINT ["/operator-service/docker-entrypoint.sh"]
 
