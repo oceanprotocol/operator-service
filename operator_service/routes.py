@@ -218,21 +218,19 @@ def stop_compute_job():
 
         if not owner or len(owner) < 2:
             owner = None
-
+        msg, status = process_signature_validation(data.get('providerSignature'), agreement_id)
+        if msg:
+            return jsonify(error=f'`providerSignature` of agreementId is required.'), status
         if owner is None and agreement_id is None and job_id is None:
             msg = f'You have to specify one of agreementId, jobId or owner'
             logging.error(msg)
             return jsonify(error=msg), 400
-
-        msg, status = process_signature_validation(data.get('providerSignature'), agreement_id)
-        if msg:
-            return jsonify(error=f'`providerSignature` of agreementId is required.'), status
-
         jobs_list = get_sql_jobs(agreement_id, job_id, owner)
-        for ajob in jobs_list:
-            name = ajob
-            logging.info(f'Stopping job : {name}')
-            stop_sql_job(name)
+        if jobs_list is not None:
+            for ajob in jobs_list:
+                name = ajob
+                logging.info(f'Stopping job : {name}')
+                stop_sql_job(name)
 
         status_list = get_sql_status(agreement_id, job_id, owner)
         return jsonify(status_list), 200
@@ -304,19 +302,19 @@ def delete_compute_job():
 
         kube_api = KubeAPI(config)
         jobs_list = get_sql_jobs(agreement_id, job_id, owner)
-        for ajob in jobs_list:
-            name = ajob
-            logging.debug(f'Deleting job : {name}')
-            remove_sql_job(name)
-            api_response = kube_api.delete_namespaced_custom_object(
-                name,
-                body,
-                grace_period_seconds=grace_period_seconds,
-                orphan_dependents=orphan_dependents,
-                propagation_policy=propagation_policy
-            )
-            logging.debug(api_response)
-
+        logging.debug(f'Got {jobs_list}')
+        if jobs_list is not None:
+            for ajob in jobs_list:
+                name = ajob
+                remove_sql_job(name)
+                api_response = kube_api.delete_namespaced_custom_object(
+                        name,
+                        body,
+                        grace_period_seconds=grace_period_seconds,
+                        orphan_dependents=orphan_dependents,
+                        propagation_policy=propagation_policy
+                )
+                logging.debug(api_response)
         status_list = get_sql_status(agreement_id, job_id, owner)
         return jsonify(status_list), 200
 

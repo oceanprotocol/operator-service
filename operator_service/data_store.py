@@ -36,7 +36,7 @@ def get_sql_status(agreement_id, job_id, owner):
     result = []
     rows = _execute_query(select_query, params, 'get_sql_status', get_rows=True)
     if not rows:
-        return
+        return result
 
     for row in rows:
         temprow = dict()
