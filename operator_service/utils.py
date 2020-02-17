@@ -60,6 +60,8 @@ def process_signature_validation(signature, original_msg):
         except InvalidSignatureError as e:
             return f'{e}', 401
 
+    return '', None
+
 
 def verify_signature(keeper, signature, original_msg, allowed_addresses):
     address = keeper.personal_ec_recover(original_msg, signature)
