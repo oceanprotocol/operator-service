@@ -218,9 +218,6 @@ def stop_compute_job():
 
         if not owner or len(owner) < 2:
             owner = None
-        #msg, status = process_signature_validation(data.get('providerSignature'), agreement_id)
-        #if msg:
-        #    return jsonify(error=f'`providerSignature` of agreementId is required.'), status
         if owner is None and agreement_id is None and job_id is None:
             msg = f'You have to specify one of agreementId, jobId or owner'
             logging.error(msg)
@@ -295,10 +292,6 @@ def delete_compute_job():
             logging.error(msg)
             return jsonify(error=msg), 400
 
-        #msg, status = process_signature_validation(data.get('providerSignature'), agreement_id)
-        #if msg:
-        #    return jsonify(error=f'`providerSignature` of agreementId is required.'), status
-
         kube_api = KubeAPI(config)
         jobs_list = get_sql_jobs(agreement_id, job_id, owner)
         logging.debug(f'Got {jobs_list}')
@@ -368,9 +361,6 @@ def get_compute_job_status():
             msg = f'You have to specify one of agreementId, jobId or owner'
             logging.error(msg)
             return jsonify(error=msg), 400
-        #msg, status = process_signature_validation(data.get('providerSignature'), agreement_id)
-        #if msg:
-        #    return jsonify(error=f'`providerSignature` of agreementId is required.'), status
         logging.debug("Try to start")
         api_response = get_sql_status(agreement_id, job_id, owner)
         return jsonify(api_response), 200
