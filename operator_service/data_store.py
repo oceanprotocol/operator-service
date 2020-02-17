@@ -36,7 +36,7 @@ def get_sql_status(agreement_id, job_id, owner):
     result = []
     rows = _execute_query(select_query, params, 'get_sql_status', get_rows=True)
     if not rows:
-        return
+        return result
 
     for row in rows:
         temprow = dict()
@@ -82,7 +82,7 @@ def get_sql_jobs(agreement_id, job_id, owner):
     try:
         rows = _execute_query(select_query, params, 'get_sql_jobs', get_rows=True)
         if not rows:
-            return
+            return []
         return [row[0] for row in rows]
     except (Exception, psycopg2.Error) as error:
         logging.error(f'PG query error: {error}')
