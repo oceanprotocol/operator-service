@@ -30,7 +30,7 @@ spec:
         - name: SIGNATURE_REQUIRED
           value: "0"
         - name: ALLOWED_PROVIDERS
-          value: "{}"
+          value: ""
         - name: POSTGRES_DB
           valueFrom:
             configMapKeyRef:
