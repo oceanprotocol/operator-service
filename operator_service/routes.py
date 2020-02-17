@@ -226,11 +226,10 @@ def stop_compute_job():
             logging.error(msg)
             return jsonify(error=msg), 400
         jobs_list = get_sql_jobs(agreement_id, job_id, owner)
-        if jobs_list is not None:
-            for ajob in jobs_list:
-                name = ajob
-                logging.info(f'Stopping job : {name}')
-                stop_sql_job(name)
+        for ajob in jobs_list:
+            name = ajob
+            logging.info(f'Stopping job : {name}')
+            stop_sql_job(name)
 
         status_list = get_sql_status(agreement_id, job_id, owner)
         return jsonify(status_list), 200
@@ -303,18 +302,17 @@ def delete_compute_job():
         kube_api = KubeAPI(config)
         jobs_list = get_sql_jobs(agreement_id, job_id, owner)
         logging.debug(f'Got {jobs_list}')
-        if jobs_list is not None:
-            for ajob in jobs_list:
-                name = ajob
-                remove_sql_job(name)
-                api_response = kube_api.delete_namespaced_custom_object(
-                        name,
-                        body,
-                        grace_period_seconds=grace_period_seconds,
-                        orphan_dependents=orphan_dependents,
-                        propagation_policy=propagation_policy
-                )
-                logging.debug(api_response)
+        for ajob in jobs_list:
+            name = ajob
+            remove_sql_job(name)
+            api_response = kube_api.delete_namespaced_custom_object(
+                name,
+                body,
+                grace_period_seconds=grace_period_seconds,
+                orphan_dependents=orphan_dependents,
+                propagation_policy=propagation_policy
+            )
+            logging.debug(api_response)
         status_list = get_sql_status(agreement_id, job_id, owner)
         return jsonify(status_list), 200
 
