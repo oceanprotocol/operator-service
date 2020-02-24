@@ -8,13 +8,14 @@ from kubernetes.client.rest import ApiException
 from operator_service.config import Config
 from operator_service.kubernetes_api import KubeAPI
 
+adminpg_services = Blueprint('adminpg_services', __name__)
 admin_services = Blueprint('admin_services', __name__)
 
 
 config = Config()
 
 
-@admin_services.route('/pgsqlinit', methods=['POST'])
+@adminpg_services.route('/pgsqlinit', methods=['POST'])
 def init_pgsql_compute():
     """
     Init pgsql database
