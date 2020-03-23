@@ -34,9 +34,8 @@ def create_compute_job(workflow, execution_id, group, version, namespace):
 
 
 def check_required_attributes(required_attributes, data, method):
-    assert isinstance(data, dict), 'invalid payload format.'
     logger.info('got %s request: %s' % (method, data))
-    if not data:
+    if not data or not isinstance(data, dict):
         logger.error('%s request failed: data is empty.' % method)
         return 'payload seems empty.', 400
 
