@@ -55,15 +55,15 @@ def process_signature_validation(signature, original_msg):
             return f'`providerSignature` of agreementId is required.', 400
 
         try:
-            verify_signature(Keeper, signature, original_msg, allowed_providers)
+            verify_signature(signature, original_msg, allowed_providers)
         except InvalidSignatureError as e:
             return f'{e}', 401
 
     return '', None
 
 
-def verify_signature(keeper, signature, original_msg, allowed_addresses):
-    address = keeper.personal_ec_recover(original_msg, signature)
+def verify_signature(signature, original_msg, allowed_addresses):
+    address = Keeper.personal_ec_recover(original_msg, signature)
     if address.lower() in allowed_addresses:
         return
 
