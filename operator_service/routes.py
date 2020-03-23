@@ -142,7 +142,7 @@ def start_compute_job():
 
     for _attr in ('algorithm', 'compute', 'input', 'output'):
         if _attr not in stages[0]:
-            logging.error(f'Missing algorithm in stage')
+            logging.error(f'Missing {_attr} in stage 0')
             return jsonify(error=f'Missing {_attr} in stage 0'), 400
     # loop through stages and add resources
     timeout = int(os.getenv("ALGO_POD_TIMEOUT", 0))
