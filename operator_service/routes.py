@@ -117,9 +117,11 @@ def start_compute_job():
         'workflow',
         'agreementId',
         'owner',
-        'providerSignature'
+        'providerSignature',
+        'providerAddress'
     ]
-    msg, status = check_required_attributes(required_attributes, data, 'POST:/compute')
+    msg, status = check_required_attributes(
+        required_attributes, data, 'POST:/compute')
     if msg:
         return jsonify(error=msg), status
 
@@ -131,9 +133,11 @@ def start_compute_job():
                        f'include workflow stages'), 400
 
     # verify provider's signature
-    msg, status = process_signature_validation(data.get('providerSignature'), agreement_id)
+    original_msg = f'{data.get("providerAddress", "")}{data.get("jobId", "")}{data.get("agreementId", "")}'
+    msg, status = process_signature_validation(
+        data.get('providerSignature'), original_msg)
     if msg:
-        return jsonify(error=f'`providerSignature` of agreementId is required.'), status
+        return jsonify(error=f'`providerSignature` is required.'), status
 
     stages = workflow.get('stages')
     if not stages:
@@ -156,7 +160,8 @@ def start_compute_job():
                 maxtime = 0
             if timeout < maxtime or maxtime <= 0:
                 astage['compute']['maxtime'] = timeout
-                logging.debug(f"Maxtime in workflow was {maxtime}. Overwritten to {timeout}")
+                logging.debug(
+                    f"Maxtime in workflow was {maxtime}. Overwritten to {timeout}")
         # get resources
         astage['compute']['resources'] = compute_resources_def
 
@@ -176,7 +181,8 @@ def start_compute_job():
         return jsonify(status_list), 200
 
     except ApiException as e:
-        logging.error(f'Exception when calling CustomObjectsApi->create_namespaced_custom_object: {e}')
+        logging.error(
+            f'Exception when calling CustomObjectsApi->create_namespaced_custom_object: {e}')
         return jsonify(error='Unable to create job'), 400
 
 
@@ -205,6 +211,14 @@ def stop_compute_job():
     """
     try:
         data = request.args if request.args else request.json
+        required_attributes = [
+            'providerSignature',
+            'providerAddress'
+        ]
+        msg, status = check_required_attributes(
+            required_attributes, data, 'PUT:/compute')
+        if msg:
+            return jsonify(error=msg), status
 
         agreement_id = data.get('agreementId')
         owner = data.get('owner')
@@ -222,6 +236,13 @@ def stop_compute_job():
             msg = f'You have to specify one of agreementId, jobId or owner'
             logging.error(msg)
             return jsonify(error=msg), 400
+        # verify provider's signature
+        original_msg = f'{data.get("providerAddress", "")}{data.get("jobId", "")}{data.get("agreementId", "")}'
+        msg, status = process_signature_validation(
+            data.get('providerSignature'), original_msg)
+        if msg:
+            return jsonify(error=f'`providerSignature` is required.'), status
+
         jobs_list = get_sql_jobs(agreement_id, job_id, owner)
         for ajob in jobs_list:
             name = ajob
@@ -264,16 +285,26 @@ def delete_compute_job():
     # deleted. Value must be non-negative integer. The value zero indicates delete immediately.
     # If this value is nil, the default grace period for the specified type will be used.
     # Defaults to a per object value if not specified. zero means delete immediately. (optional)
-    orphan_dependents = True  # bool | Deprecated: please use the PropagationPolicy, this field
+    # bool | Deprecated: please use the PropagationPolicy, this field
+    orphan_dependents = True
     # will be deprecated in 1.7. Should the dependent objects be orphaned. If true/false,
     # the \"orphan\" finalizer will be added to/removed from the object's finalizers list. Either
     # this field or PropagationPolicy may be set, but not both. (optional)
-    propagation_policy = 'propagation_policy_example'  # str | Whether and how garbage collection
+    # str | Whether and how garbage collection
+    propagation_policy = 'propagation_policy_example'
     # will be performed. Either this field or OrphanDependents may be set, but not both. The
     # default policy is decided by the existing finalizer set in the metadata.finalizers and the
     # resource-specific default policy. (optional)
     try:
         data = request.args if request.args else request.json
+        required_attributes = [
+            'providerSignature',
+            'providerAddress'
+        ]
+        msg, status = check_required_attributes(
+            required_attributes, data, 'DELETE:/compute')
+        if msg:
+            return jsonify(error=msg), status
         agreement_id = data.get('agreementId')
         owner = data.get('owner')
         job_id = data.get('jobId')
@@ -291,6 +322,12 @@ def delete_compute_job():
             msg = f'You have to specify one of agreementId, jobId or owner'
             logging.error(msg)
             return jsonify(error=msg), 400
+        # verify provider's signature
+        original_msg = f'{data.get("providerAddress", "")}{data.get("jobId", "")}{data.get("agreementId", "")}'
+        msg, status = process_signature_validation(
+            data.get('providerSignature'), original_msg)
+        if msg:
+            return jsonify(error=f'`providerSignature` is required.'), status
 
         kube_api = KubeAPI(config)
         jobs_list = get_sql_jobs(agreement_id, job_id, owner)
@@ -310,7 +347,8 @@ def delete_compute_job():
         return jsonify(status_list), 200
 
     except ApiException as e:
-        logging.error(f'Exception when calling CustomObjectsApi->delete_namespaced_custom_object: {e}')
+        logging.error(
+            f'Exception when calling CustomObjectsApi->delete_namespaced_custom_object: {e}')
         return jsonify(error=f'Error deleting job {e}'), 400
 
 
@@ -344,6 +382,15 @@ def get_compute_job_status():
     """
     try:
         data = request.args if request.args else request.json
+        required_attributes = [
+            'providerSignature',
+            'providerAddress'
+        ]
+        msg, status = check_required_attributes(
+            required_attributes, data, 'POST:/compute')
+        if msg:
+            return jsonify(error=msg), status
+
         agreement_id = data.get('agreementId')
         owner = data.get('owner')
         job_id = data.get('jobId')
@@ -361,6 +408,13 @@ def get_compute_job_status():
             msg = f'You have to specify one of agreementId, jobId or owner'
             logging.error(msg)
             return jsonify(error=msg), 400
+        # verify provider's signature
+        original_msg = f'{data.get("providerAddress", "")}{data.get("jobId", "")}{data.get("agreementId", "")}'
+        msg, status = process_signature_validation(
+            data.get('providerSignature'), original_msg)
+        if msg:
+            return jsonify(error=f'`providerSignature` is required.'), status
+
         logging.debug("Try to start")
         api_response = get_sql_status(agreement_id, job_id, owner)
         return jsonify(api_response), 200
