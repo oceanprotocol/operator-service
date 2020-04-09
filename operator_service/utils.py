@@ -64,7 +64,8 @@ def process_signature_validation(signature, original_msg):
 
 
 def verify_signature(keeper, signature, original_msg, allowed_addresses):
-    address = keeper.personal_ec_recover(original_msg, signature)
+    signable_message = encode_defunct(text=original_msg)
+    address = keeper.personal_ec_recover(signable_message, signature)
     if address.lower() in allowed_addresses:
         return
 
