@@ -61,7 +61,7 @@ Parameters
                             "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e",
                             "0xACBd138aBD70e2F00903268F3Db08f2D25677C9e"
               ],
-              "owner":""https://gishubdata.nd.gov/sites/default/files/NDHUB.Roads_MileMarkers_1.csv"",
+              "owner":"0xC41808BBef371AD5CFc76466dDF9dEe228d2BdAA",
               "publishOutput":true,
               "publishAlgorithmLog":true
             }
@@ -106,10 +106,8 @@ An Array of status objects, each object describing a workflow. If the array is e
         dateFinished:Unix timestamp when job finished
         status:  Int, see below for list
         statusText: String, see below
-        configlogUrl: URL to get the configuration log (for admins only)
-        publishlogUrl: URL to get the publish log (for admins only)
-        algologUrl: URL to get the algo log (for user)
-        outputsUrl: Array of URLs for algo outputs
+        algorithmLogUrl: URL to get the algo log (for user)
+        resultsUrls: Array of URLs for algo outputs
         resultsDid: if we have a did
         stopreq: 0 - None, 1 - API Enpoint Stop called, 2 - Job exceeded allocated time
         removed: 0 - No, 1 - Removed from k8 cluster
@@ -146,10 +144,8 @@ Output:
         "dateFinished":"2020-10-01T01:00:00Z",
         "status":5,
         "statusText":"Job finished",
-        "configlogUrl":"http://example.net/logs/config.log",
-        "publishlogUrl":"http://example.net/logs/publish.log",
-        "algologUrl":"http://example.net/logs/algo.log",
-        "outputsUrl":[
+        "algorithmLogUrl":"http://example.net/logs/algo.log",
+        "resultsUrls":[
             {
             "http://example.net/logs/output/0",
             "http://example.net/logs/output/1"
@@ -165,10 +161,8 @@ Output:
         "dateFinished":"2020-10-01T01:00:00Z",
         "status":5,
         "statusText":"Job finished",
-        "configlogUrl":"http://example.net/logs2/config.log",
-        "publishlogUrl":"http://example.net/logs2/cpublish.log",
-        "algologUrl":"http://example.net/logs2/algo.log",
-        "outputsUrl":[
+        "algorithmLogUrl":"http://example.net/logs2/algo.log",
+        "resultsUrls":[
             {
             "http://example.net/logs2/output/0",
             "http://example.net/logs2/output/1"
