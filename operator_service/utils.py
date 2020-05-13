@@ -34,9 +34,8 @@ def create_compute_job(workflow, execution_id, group, version, namespace):
 
 
 def check_required_attributes(required_attributes, data, method):
-    assert isinstance(data, dict), 'invalid payload format.'
     logger.info('got %s request: %s' % (method, data))
-    if not data:
+    if not data or not isinstance(data, dict):
         logger.error('%s request failed: data is empty.' % method)
         return 'payload seems empty.', 400
 
@@ -56,15 +55,15 @@ def process_signature_validation(signature, original_msg):
             return f'`providerSignature` of agreementId is required.', 400
 
         try:
-            verify_signature(Keeper, signature, original_msg, allowed_providers)
+            verify_signature(signature, original_msg, allowed_providers)
         except InvalidSignatureError as e:
             return f'{e}', 401
 
     return '', None
 
 
-def verify_signature(keeper, signature, original_msg, allowed_addresses):
-    address = keeper.personal_ec_recover(original_msg, signature)
+def verify_signature(signature, original_msg, allowed_addresses):
+    address = Keeper.personal_ec_recover(original_msg, signature)
     if address.lower() in allowed_addresses:
         return
 
