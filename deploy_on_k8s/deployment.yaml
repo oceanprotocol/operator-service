@@ -56,7 +56,7 @@ spec:
             configMapKeyRef:
               key: POSTGRES_PORT
               name: postgres-config
-        image: oceanprotocol/operator-service:latest
+        image: alexdevel:5000/operator-service:latest
         imagePullPolicy: Always
         name: operator-api
         ports:
@@ -67,8 +67,6 @@ spec:
         terminationMessagePolicy: File
       dnsPolicy: ClusterFirst
       restartPolicy: Always
-      serviceAccount: operator-service
-      serviceAccountName: operator-service
       schedulerName: default-scheduler
       securityContext: {}
       terminationGracePeriodSeconds: 30

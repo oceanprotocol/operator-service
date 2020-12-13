@@ -89,14 +89,14 @@ def get_sql_jobs(agreement_id, job_id, owner):
         return
 
 
-def create_sql_job(agreement_id, job_id, owner):
+def create_sql_job(agreement_id, job_id, owner, body, namespace):
     postgres_insert_query = """
         INSERT 
             INTO jobs 
-                (agreementId,workflowId,owner,status,statusText) 
+                (agreementId,workflowId,owner,status,statusText,workflow,namespace) 
             VALUES 
-                (%s, %s, %s, %s, %s)"""
-    record_to_insert = (str(agreement_id), str(job_id), str(owner), 10, "Job started")
+                (%s, %s, %s, %s, %s,%s,%s)"""
+    record_to_insert = (str(agreement_id), str(job_id), str(owner), 1, "Warming up", json.dumps(body), namespace)
     return _execute_query(postgres_insert_query, record_to_insert, 'create_sql_job')
 
 

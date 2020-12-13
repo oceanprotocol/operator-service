@@ -16,6 +16,8 @@ from operator_service.utils import (
     process_signature_validation,
     get_compute_resources
 )
+logger = logging.getLogger('ocean-operator')
+logger.setLevel(logging.DEBUG)
 
 services = Blueprint('services', __name__)
 
@@ -137,12 +139,12 @@ def start_compute_job():
 
     stages = workflow.get('stages')
     if not stages:
-        logging.error(f'Missing stages')
+        logger.error(f'Missing stages')
         return jsonify(error='Missing stages'), 400
 
     for _attr in ('algorithm', 'compute', 'input', 'output'):
         if _attr not in stages[0]:
-            logging.error(f'Missing {_attr} in stage 0')
+            logger.error(f'Missing {_attr} in stage 0')
             return jsonify(error=f'Missing {_attr} in stage 0'), 400
     # loop through stages and add resources
     timeout = int(os.getenv("ALGO_POD_TIMEOUT", 0))
@@ -156,28 +158,20 @@ def start_compute_job():
                 maxtime = 0
             if timeout < maxtime or maxtime <= 0:
                 astage['compute']['maxtime'] = timeout
-                logging.debug(f"Maxtime in workflow was {maxtime}. Overwritten to {timeout}")
+                logger.debug(f"Maxtime in workflow was {maxtime}. Overwritten to {timeout}")
         # get resources
         astage['compute']['resources'] = compute_resources_def
+        astage['compute']['namespace'] = config.namespace
 
     job_id = generate_new_id()
-    logging.debug(f'Got job_id: {job_id}')
+    logger.debug(f'Got job_id: {job_id}')
     body = create_compute_job(
         workflow, job_id, config.group, config.version, config.namespace
     )
-    logging.debug(f'Got body: {body}')
-
-    kube_api = KubeAPI(config)
-    try:
-        api_response = kube_api.create_namespaced_custom_object(body)
-        logging.info(api_response)
-        create_sql_job(agreement_id, str(job_id), owner)
-        status_list = get_sql_status(agreement_id, str(job_id), owner)
-        return jsonify(status_list), 200
-
-    except ApiException as e:
-        logging.error(f'Exception when calling CustomObjectsApi->create_namespaced_custom_object: {e}')
-        return jsonify(error='Unable to create job'), 400
+    logger.debug(f'Got body: {body}')
+    create_sql_job(agreement_id, str(job_id), owner,body,config.namespace)
+    status_list = get_sql_status(agreement_id, str(job_id), owner)
+    return jsonify(status_list), 200
 
 
 @services.route('/compute', methods=['PUT'])
@@ -220,19 +214,19 @@ def stop_compute_job():
             owner = None
         if owner is None and agreement_id is None and job_id is None:
             msg = f'You have to specify one of agreementId, jobId or owner'
-            logging.error(msg)
+            logger.error(msg)
             return jsonify(error=msg), 400
         jobs_list = get_sql_jobs(agreement_id, job_id, owner)
         for ajob in jobs_list:
             name = ajob
-            logging.info(f'Stopping job : {name}')
+            logger.info(f'Stopping job : {name}')
             stop_sql_job(name)
 
         status_list = get_sql_status(agreement_id, job_id, owner)
         return jsonify(status_list), 200
 
     except ApiException as e:
-        logging.error(f'Exception when stopping compute job: {e}')
+        logger.error(f'Exception when stopping compute job: {e}')
         return jsonify(error=f'Error stopping job: {e}'), 400
 
 
@@ -289,12 +283,12 @@ def delete_compute_job():
 
         if owner is None and agreement_id is None and job_id is None:
             msg = f'You have to specify one of agreementId, jobId or owner'
-            logging.error(msg)
+            logger.error(msg)
             return jsonify(error=msg), 400
 
         kube_api = KubeAPI(config)
         jobs_list = get_sql_jobs(agreement_id, job_id, owner)
-        logging.debug(f'Got {jobs_list}')
+        logger.debug(f'Got {jobs_list}')
         for ajob in jobs_list:
             name = ajob
             remove_sql_job(name)
@@ -305,12 +299,12 @@ def delete_compute_job():
                 orphan_dependents=orphan_dependents,
                 propagation_policy=propagation_policy
             )
-            logging.debug(api_response)
+            logger.debug(api_response)
         status_list = get_sql_status(agreement_id, job_id, owner)
         return jsonify(status_list), 200
 
     except ApiException as e:
-        logging.error(f'Exception when calling CustomObjectsApi->delete_namespaced_custom_object: {e}')
+        logger.error(f'Exception when calling CustomObjectsApi->delete_namespaced_custom_object: {e}')
         return jsonify(error=f'Error deleting job {e}'), 400
 
 
@@ -359,13 +353,13 @@ def get_compute_job_status():
 
         if owner is None and agreement_id is None and job_id is None:
             msg = f'You have to specify one of agreementId, jobId or owner'
-            logging.error(msg)
+            logger.error(msg)
             return jsonify(error=msg), 400
-        logging.debug("Try to start")
+        logger.debug("Try to start")
         api_response = get_sql_status(agreement_id, job_id, owner)
         return jsonify(api_response), 200
 
     except ApiException as e:
         msg = f'Error getting the status: {e}'
-        logging.error(msg)
+        logger.error(msg)
         return jsonify(error=msg), 400
