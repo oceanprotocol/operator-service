@@ -168,6 +168,7 @@ def start_compute_job():
     body = create_compute_job(
         workflow, job_id, config.group, config.version, config.namespace
     )
+    body['metadata']['secret'] = generate_new_id()
     logger.debug(f'Got body: {body}')
     create_sql_job(agreement_id, str(job_id), owner,body,config.namespace)
     status_list = get_sql_status(agreement_id, str(job_id), owner)
