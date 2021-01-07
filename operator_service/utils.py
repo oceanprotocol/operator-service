@@ -93,11 +93,11 @@ def is_verify_signature_required():
 
 def get_compute_resources():
     resources = dict()
-    resources['inputVolumesize'] = "1Gi"
-    resources['outputVolumesize'] = "1Gi"
-    resources['adminlogsVolumesize'] = "1Gi"
-    resources['requests_cpu'] = "1"
-    resources['requests_memory'] = "200Mi"
-    resources['limits_cpu'] = "2"
-    resources['limits_memory'] = "500Mi"
+    resources['inputVolumesize'] = os.environ.get('inputVolumesize', "1Gi")
+    resources['outputVolumesize'] = os.environ.get('outputVolumesize', "1Gi")
+    resources['adminlogsVolumesize'] = os.environ.get('adminlogsVolumesize', "1Gi")
+    resources['requests_cpu'] = os.environ.get('requests_cpu', "200m")
+    resources['requests_memory'] = os.environ.get('requests_memory', "100Mi")
+    resources['limits_cpu'] = os.environ.get('limits_cpu', "1")
+    resources['limits_memory'] = os.environ.get('limits_memory', "500Mi")
     return resources
