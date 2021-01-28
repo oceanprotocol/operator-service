@@ -118,6 +118,7 @@ $ curl -X GET "http://localhost:8050/api/v1/operator/list" -H "accept: applicati
      POSTGRES_PORT = Postgresql port
      SIGNATURE_REQUIRED = 0 -> no signature required, 1 -> request brizo signature
      ALLOWED_PROVIDERS = Json array with allowed providers that can access the endpoints
+     OPERATOR_ADDRESS = Address used by Compute enviroment (IMPORTANT: Corresponding private key must be set in operator-engine env)
 
 ### Testing
 

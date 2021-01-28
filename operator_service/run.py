@@ -2,7 +2,7 @@
 #  SPDX-License-Identifier: Apache-2.0
 
 import configparser
-
+import os
 from flask import jsonify
 from flask_swagger import swagger
 from flask_swagger_ui import get_swaggerui_blueprint
@@ -23,6 +23,7 @@ def version():
     info = dict()
     info['software'] = Metadata.TITLE
     info['version'] = get_version()
+    info['address'] = os.getenv('OPERATOR_ADDRESS',None)
     return jsonify(info)
 
 
