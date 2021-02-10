@@ -14,7 +14,8 @@ from operator_service.utils import (
     check_required_attributes,
     generate_new_id,
     process_signature_validation,
-    get_compute_resources
+    get_compute_resources,
+    get_namespace_configs
 )
 logger = logging.getLogger('ocean-operator')
 logger.setLevel(logging.DEBUG)
@@ -149,6 +150,7 @@ def start_compute_job():
     # loop through stages and add resources
     timeout = int(os.getenv("ALGO_POD_TIMEOUT", 0))
     compute_resources_def = get_compute_resources()
+    namespaces_def = get_namespace_configs()
     for count, astage in enumerate(workflow['stages']):
         # check timeouts
         if timeout > 0:
@@ -161,7 +163,7 @@ def start_compute_job():
                 logger.debug(f"Maxtime in workflow was {maxtime}. Overwritten to {timeout}")
         # get resources
         astage['compute']['resources'] = compute_resources_def
-        astage['compute']['namespace'] = config.namespace
+        astage['compute']['namespace'] = namespaces_def['namespace']
 
     job_id = generate_new_id()
     logger.debug(f'Got job_id: {job_id}')

@@ -101,3 +101,8 @@ def get_compute_resources():
     resources['limits_cpu'] = os.environ.get('limits_cpu', "1")
     resources['limits_memory'] = os.environ.get('limits_memory', "500Mi")
     return resources
+
+def get_namespace_configs():
+    resources = dict()
+    resources['namespace'] = os.environ.get('namespace', "ocean-compute")
+    return resources
