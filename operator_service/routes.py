@@ -7,7 +7,7 @@ from flask import Blueprint, jsonify, request
 from kubernetes.client.rest import ApiException
 
 from operator_service.config import Config
-from operator_service.data_store import create_sql_job, get_sql_status, get_sql_jobs, stop_sql_job, remove_sql_job
+from operator_service.data_store import create_sql_job, get_sql_status, get_sql_jobs, stop_sql_job, remove_sql_job, get_sql_running_jobs
 from operator_service.kubernetes_api import KubeAPI
 from operator_service.utils import (
     create_compute_job,
@@ -256,59 +256,8 @@ def delete_compute_job():
         description: owner
         type: string
     """
-    body = kubernetes.client.V1DeleteOptions()  # V1DeleteOptions |
-    grace_period_seconds = 56  # int | The duration in seconds before the object should be
-    # deleted. Value must be non-negative integer. The value zero indicates delete immediately.
-    # If this value is nil, the default grace period for the specified type will be used.
-    # Defaults to a per object value if not specified. zero means delete immediately. (optional)
-    orphan_dependents = True  # bool | Deprecated: please use the PropagationPolicy, this field
-    # will be deprecated in 1.7. Should the dependent objects be orphaned. If true/false,
-    # the \"orphan\" finalizer will be added to/removed from the object's finalizers list. Either
-    # this field or PropagationPolicy may be set, but not both. (optional)
-    propagation_policy = 'propagation_policy_example'  # str | Whether and how garbage collection
-    # will be performed. Either this field or OrphanDependents may be set, but not both. The
-    # default policy is decided by the existing finalizer set in the metadata.finalizers and the
-    # resource-specific default policy. (optional)
-    try:
-        data = request.args if request.args else request.json
-        agreement_id = data.get('agreementId')
-        owner = data.get('owner')
-        job_id = data.get('jobId')
-
-        if not agreement_id or len(agreement_id) < 2:
-            agreement_id = None
-
-        if not job_id or len(job_id) < 2:
-            job_id = None
-
-        if not owner or len(owner) < 2:
-            owner = None
-
-        if owner is None and agreement_id is None and job_id is None:
-            msg = f'You have to specify one of agreementId, jobId or owner'
-            logger.error(msg)
-            return jsonify(error=msg), 400
-
-        kube_api = KubeAPI(config)
-        jobs_list = get_sql_jobs(agreement_id, job_id, owner)
-        logger.debug(f'Got {jobs_list}')
-        for ajob in jobs_list:
-            name = ajob
-            remove_sql_job(name)
-            api_response = kube_api.delete_namespaced_custom_object(
-                name,
-                body,
-                grace_period_seconds=grace_period_seconds,
-                orphan_dependents=orphan_dependents,
-                propagation_policy=propagation_policy
-            )
-            logger.debug(api_response)
-        status_list = get_sql_status(agreement_id, job_id, owner)
-        return jsonify(status_list), 200
-
-    except ApiException as e:
-        logger.error(f'Exception when calling CustomObjectsApi->delete_namespaced_custom_object: {e}')
-        return jsonify(error=f'Error deleting job {e}'), 400
+    #since op-engine handles this, there is no need for this endpoint. Will just keep it here for backwards compat
+    return jsonify(""), 200
 
 
 @services.route('/compute', methods=['GET'])
@@ -360,6 +309,28 @@ def get_compute_job_status():
             return jsonify(error=msg), 400
         logger.debug("Try to start")
         api_response = get_sql_status(agreement_id, job_id, owner)
+        return jsonify(api_response), 200
+
+    except ApiException as e:
+        msg = f'Error getting the status: {e}'
+        logger.error(msg)
+        return jsonify(error=msg), 400
+
+@services.route('/runningjobs', methods=['GET'])
+def get_running_jobs():
+    """
+    Get running jobs
+    ---
+    tags:
+      - operation
+    consumes:
+      - application/json
+    responses:
+      200:
+        description: Get correctly the status
+    """
+    try:
+        api_response = get_sql_running_jobs()
         return jsonify(api_response), 200
 
     except ApiException as e:

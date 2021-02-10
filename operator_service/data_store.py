@@ -88,6 +88,30 @@ def get_sql_jobs(agreement_id, job_id, owner):
         logging.error(f'PG query error: {error}')
         return
 
+def get_sql_running_jobs():
+    # enforce strings
+    params = dict()
+    select_query = '''
+    SELECT agreementId, workflowId, owner, status, statusText, 
+        extract(epoch from dateCreated) as dateCreated, 
+        namespace FROM jobs WHERE dateFinished IS NULL
+    '''
+    result = []
+    rows = _execute_query(select_query, params, 'get_sql_status', get_rows=True)
+    if not rows:
+        return result
+    for row in rows:
+        temprow = dict()
+        temprow['agreementId'] = row[0]
+        temprow['jobId'] = row[1]
+        temprow['owner'] = row[2]
+        temprow['status'] = row[3]
+        temprow['statusText'] = row[4]
+        temprow['dateCreated'] = row[5]
+        temprow['namespace'] = row[6]
+        result.append(temprow)
+    return result
+
 
 def create_sql_job(agreement_id, job_id, owner, body, namespace):
     postgres_insert_query = """

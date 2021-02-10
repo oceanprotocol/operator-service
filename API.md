@@ -119,6 +119,7 @@ An Array of status objects, each object describing a workflow. If the array is e
 
 | status   | Description        |
 |----------|--------------------|
+|  1       | Warming up        |
 |  10       | Job started        |
 |  20       | Configuring volumes|
 |  30       | Provisioning success |
@@ -228,3 +229,19 @@ Example:
 DELETE /api/v1/compute?signature=0x00110011&serviceAgreementId=0x1111&jobId=012023
 ```
 
+
+## Get running jobs
+
+### GET /api/v1/runningjobs
+
+Gets all running jobs
+
+
+Returns
+
+One or more status objects
+
+Example:
+```
+GET /api/v1/runningjobs
+```
