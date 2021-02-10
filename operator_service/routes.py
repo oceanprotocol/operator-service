@@ -168,11 +168,11 @@ def start_compute_job():
     job_id = generate_new_id()
     logger.debug(f'Got job_id: {job_id}')
     body = create_compute_job(
-        workflow, job_id, config.group, config.version, config.namespace
+        workflow, job_id, config.group, config.version, namespaces_def['namespace']
     )
     body['metadata']['secret'] = generate_new_id()
     logger.debug(f'Got body: {body}')
-    create_sql_job(agreement_id, str(job_id), owner,body,config.namespace)
+    create_sql_job(agreement_id, str(job_id), owner,body,namespaces_def['namespace'])
     status_list = get_sql_status(agreement_id, str(job_id), owner)
     return jsonify(status_list), 200
 

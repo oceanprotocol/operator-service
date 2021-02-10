@@ -104,5 +104,5 @@ def get_compute_resources():
 
 def get_namespace_configs():
     resources = dict()
-    resources['namespace'] = os.environ.get('namespace', "ocean-compute")
+    resources['namespace'] = os.environ.get('DEFAULT_NAMESPACE', "ocean-compute")
     return resources
