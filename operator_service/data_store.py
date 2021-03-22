@@ -94,7 +94,7 @@ def get_sql_running_jobs():
     select_query = '''
     SELECT agreementId, workflowId, owner, status, statusText, 
         extract(epoch from dateCreated) as dateCreated, 
-        namespace FROM jobs WHERE dateFinished IS NULL
+        namespace,workflow FROM jobs WHERE dateFinished IS NULL
     '''
     result = []
     rows = _execute_query(select_query, params, 'get_sql_status', get_rows=True)
@@ -109,6 +109,16 @@ def get_sql_running_jobs():
         temprow['statusText'] = row[4]
         temprow['dateCreated'] = row[5]
         temprow['namespace'] = row[6]
+        workflow_dict=json.loads(row[7])
+        stage=workflow_dict['spec']['metadata']['stages'][0]
+        if 'id' in stage['algorithm']:
+            temprow['algoDID'] = stage['algorithm']['id']
+        else:
+            temprow['algoDID'] = 'raw'
+        temprow['inputDID']=list()
+        for input in stage['input']:
+            if 'id' in input:
+                temprow['inputDID'].append(input['id'])
         result.append(temprow)
     return result
 

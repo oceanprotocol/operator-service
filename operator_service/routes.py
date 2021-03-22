@@ -307,7 +307,7 @@ def get_compute_job_status():
             msg = f'You have to specify one of agreementId, jobId or owner'
             logger.error(msg)
             return jsonify(error=msg), 400
-        logger.debug("Try to start")
+        logger.debug(f"Got status request for {agreement_id}, {job_id}, {owner}")
         api_response = get_sql_status(agreement_id, job_id, owner)
         return jsonify(api_response), 200
 
