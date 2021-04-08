@@ -14,7 +14,7 @@ def get_sql_status(agreement_id, job_id, owner):
     SELECT agreementId, workflowId, owner, status, statusText, 
         extract(epoch from dateCreated) as dateCreated, 
         extract(epoch from dateFinished) as dateFinished,
-        configlogURL, publishlogURL, algologURL, outputsURL, ddo, stopreq, removed 
+        configlogURL, publishlogURL, algologURL, outputsURL, ddo, stopreq, removed , workflow
     FROM jobs WHERE 1=1
     '''
 
@@ -59,6 +59,16 @@ def get_sql_status(agreement_id, job_id, owner):
             temprow['resultsDid'] = ddo_json.get('id', '')
         temprow['stopreq'] = row[12]
         temprow['removed'] = row[13]
+        workflow_dict=json.loads(row[14])
+        stage=workflow_dict['spec']['metadata']['stages'][0]
+        if 'id' in stage['algorithm']:
+            temprow['algoDID'] = stage['algorithm']['id']
+        else:
+            temprow['algoDID'] = 'raw'
+        temprow['inputDID']=list()
+        for input in stage['input']:
+            if 'id' in input:
+                temprow['inputDID'].append(input['id'])
         result.append(temprow)
     return result
 
