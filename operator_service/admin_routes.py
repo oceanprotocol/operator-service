@@ -63,12 +63,33 @@ def init_pgsql_compute():
         connection.commit()
     except (Exception, psycopg2.Error) as error:
         output = output + "Error PostgreSQL:" + str(error)
-    finally:
-        # closing database connection.
-        if connection and cursor:
+        
+    # add more columns with alter, to insure backwards compat
+    try:
+        cursor = connection.cursor()
+        table_query = "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS did varchar(255)"
+        cursor.execute(table_query)
+    except (Exception, psycopg2.Error) as error:
+        output = output + "Error PostgreSQL:" + str(error)
+    # add more columns with alter, to insure backwards compat
+    try:
+        cursor = connection.cursor()
+        table_query = "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS chainid varchar(255)"
+        cursor.execute(table_query)
+    except (Exception, psycopg2.Error) as error:
+        output = output + "Error PostgreSQL:" + str(error)
+
+    # add more columns with alter, to insure backwards compat
+    try:
+        cursor = connection.cursor()
+        table_query = "CREATE INDEX IF NOT EXISTS indx_owner_jobs ON jobs(owner)"
+        cursor.execute(table_query)
+    except (Exception, psycopg2.Error) as error:
+        output = output + "Error PostgreSQL:" + str(error)
+
+    if connection and cursor:
             cursor.close()
             connection.close()
-
     return output, 200
 
 
