@@ -7,7 +7,7 @@ from flask import Blueprint, jsonify, request
 from kubernetes.client.rest import ApiException
 
 from operator_service.config import Config
-from operator_service.data_store import create_sql_job, get_sql_status, get_sql_jobs, stop_sql_job, remove_sql_job, get_sql_running_jobs
+from operator_service.data_store import create_sql_job, get_sql_status, get_sql_jobs, stop_sql_job, remove_sql_job, get_sql_running_jobs, get_sql_job_urls
 from operator_service.kubernetes_api import KubeAPI
 from operator_service.utils import (
     create_compute_job,
@@ -15,9 +15,14 @@ from operator_service.utils import (
     generate_new_id,
     process_signature_validation,
     get_compute_resources,
-    get_namespace_configs
+    get_namespace_configs,
+    build_download_response
 )
-logger = logging.getLogger('ocean-operator')
+from requests.adapters import HTTPAdapter
+from requests.sessions import Session
+
+logging.basicConfig(format='%(asctime)s %(message)s')
+logger = logging.getLogger('operator-service')
 logger.setLevel(logging.DEBUG)
 
 services = Blueprint('services', __name__)
@@ -199,6 +204,10 @@ def stop_compute_job():
         in: query
         description: owner
         type: string
+      - name: providerSignature
+        in: query
+        description: providerSignature
+        type: string
     """
     try:
         data = request.args if request.args else request.json
@@ -255,6 +264,10 @@ def delete_compute_job():
         in: query
         description: owner
         type: string
+      - name: providerSignature
+        in: query
+        description: providerSignature
+        type: string
     """
     #since op-engine handles this, there is no need for this endpoint. Will just keep it here for backwards compat
     return jsonify(""), 200
@@ -281,6 +294,10 @@ def get_compute_job_status():
       - name: owner
         in: query
         description: owner
+        type: string
+      - name: providerSignature
+        in: query
+        description: providerSignature
         type: string
     responses:
       200:
@@ -337,3 +354,80 @@ def get_running_jobs():
         msg = f'Error getting the status: {e}'
         logger.error(msg)
         return jsonify(error=msg), 400
+
+
+@services.route('/getResult', methods=['GET'])
+def get_indexed_result():
+    """
+    Get one result from a compute job, based on the index.
+    ---
+    tags:
+      - operation
+    consumes:
+      - application/json
+    parameters:
+      - name: index
+        in: query
+        description: output index
+        type: number
+      - name: job_id
+        in: query
+        description: Id of the job.
+        type: string
+      - name: providerSignature
+        in: query
+        description: providerSignature
+        type: string
+      - name: consumerSignature
+        in: query
+        description: consumerSignature
+        type: string
+    responses:
+      200:
+        description: File content
+      400:
+        description: Error
+    """
+    try:
+        requests_session = get_requests_session()
+        data = request.args if request.args else request.json
+        index = int(data.get('index'))
+        job_id = data.get('job_id')
+        if index is None and job_id is None:
+          msg = f'Both index & job_id are requred'
+          return jsonify(error=msg), 400
+        outputs, owner = get_sql_job_urls(job_id)
+        # TO DO - check owner here
+        logger.info(f"Got {owner}")
+        logger.info(f"Got {outputs}")
+        if outputs is None:
+          msg = f'No results for job {job_id}'
+          return jsonify(error=msg), 404
+        # check the index
+        if index >= len(outputs):
+          msg = f'No such index {index} in this compute job'
+          return jsonify(error=msg), 404
+        logger.info(f"Trying: {outputs[index]['url']}")
+        return build_download_response(
+            request, requests_session, outputs[index]['url'], None
+        )
+
+    except ApiException as e:
+        msg = f'Error getting the status: {e}'
+        logger.error(msg)
+        return jsonify(error=msg), 400
+
+
+def get_requests_session() -> Session:
+    """
+    Set connection pool maxsize and block value to avoid `connection pool full` warnings.
+    :return: requests session
+    """
+    session = Session()
+    session.mount(
+        "http://", HTTPAdapter(pool_connections=25, pool_maxsize=25, pool_block=True)
+    )
+    session.mount(
+        "https://", HTTPAdapter(pool_connections=25, pool_maxsize=25, pool_block=True)
+    )
+    return session
