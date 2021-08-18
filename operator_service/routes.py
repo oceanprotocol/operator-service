@@ -382,11 +382,17 @@ def get_indexed_result():
         in: query
         description: consumerSignature
         type: string
+      - name: signatureText
+        in: query
+        description: signatureText
+        type: string
     responses:
       200:
         description: File content
       400:
         description: Error
+      404:
+        description: Not found
     """
     try:
         requests_session = get_requests_session()

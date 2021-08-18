@@ -4,6 +4,7 @@ import uuid
 import logging
 import mimetypes
 from cgi import parse_header
+from os import getenv
 
 from kubernetes.client.rest import ApiException
 from ocean_keeper import Keeper
@@ -121,7 +122,14 @@ def build_download_response(request, requests_session, url, content_type=None):
         if is_range_request:
             download_request_headers = {"Range": request.headers.get("range")}
             download_response_headers = download_request_headers
-
+        # IPFS utils
+        ipfs_x_api_key = getenv('X-API-KEY',None)
+        if ipfs_x_api_key:
+            download_request_headers['X-API-KEY'] = ipfs_x_api_key
+        ipfs_client_id = getenv('CLIENT-ID',None)
+        if ipfs_client_id:
+            download_request_headers['CLIENT-ID'] = ipfs_client_id
+             
         response = requests_session.get(
             url, headers=download_request_headers, stream=True, timeout=3
         )
