@@ -370,7 +370,7 @@ def get_indexed_result():
         in: query
         description: output index
         type: number
-      - name: job_id
+      - name: jobId
         in: query
         description: Id of the job.
         type: string
@@ -382,9 +382,9 @@ def get_indexed_result():
         in: query
         description: consumerSignature
         type: string
-      - name: signatureText
+      - name: consumerAddress
         in: query
-        description: signatureText
+        description: consumerAddress
         type: string
     responses:
       200:
@@ -398,7 +398,7 @@ def get_indexed_result():
         requests_session = get_requests_session()
         data = request.args if request.args else request.json
         index = int(data.get('index'))
-        job_id = data.get('job_id')
+        job_id = data.get('jobId')
         if index is None and job_id is None:
           msg = f'Both index & job_id are requred'
           return jsonify(error=msg), 400
