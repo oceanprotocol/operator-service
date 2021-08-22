@@ -406,10 +406,11 @@ def get_indexed_result():
         # TO DO - check owner here
         logger.info(f"Got {owner}")
         logger.info(f"Got {outputs}")
-        if outputs is None:
+        if outputs is None or not isinstance(outputs, list):
           msg = f'No results for job {job_id}'
           return jsonify(error=msg), 404
         # check the index
+        logger.info(f"Len outputs {len(outputs)}, index: {index}")
         if index >= len(outputs):
           msg = f'No such index {index} in this compute job'
           return jsonify(error=msg), 404

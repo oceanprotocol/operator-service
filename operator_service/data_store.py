@@ -52,8 +52,11 @@ def get_sql_status(agreement_id, job_id, owner):
         if row[10] and len(str(row[10])) > 2:
             # need to filter url from object
             outputs = json.loads(str(row[10]))
+            logger.error(f'Output este TODO {outputs}')
             for i, entry in enumerate(outputs):
-                del outputs[i]['url']
+                logger.error(f'{i},{entry}')
+                if outputs[i] and outputs[i]['url']:
+                    del outputs[i]['url']
             temprow['results'] = outputs
         # temprow['resultsDid'] = ''
         #if row[11] and len(str(row[11])) > 2:
@@ -87,9 +90,12 @@ def get_sql_job_urls(job_id):
     rows = _execute_query(select_query, params, 'get_sql_job_urls', get_rows=True)
     if not rows or len(rows)<1:
         return None, None
-    result = json.loads(str(rows[0][1]))
-    owner = rows[0][0]
-    return result, owner
+    try:
+        result = json.loads(str(rows[0][1]))
+        owner = rows[0][0]
+        return result, owner
+    except:
+        return None, None
 
 def get_sql_jobs(agreement_id, job_id, owner):
     params = dict()
