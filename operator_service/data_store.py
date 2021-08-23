@@ -55,7 +55,7 @@ def get_sql_status(agreement_id, job_id, owner):
             logger.error(f'Output este TODO {outputs}')
             for i, entry in enumerate(outputs):
                 logger.error(f'{i},{entry}')
-                if outputs[i] and outputs[i]['url']:
+                if outputs[i] and "url" in outputs[i]:
                     del outputs[i]['url']
             temprow['results'] = outputs
         # temprow['resultsDid'] = ''
