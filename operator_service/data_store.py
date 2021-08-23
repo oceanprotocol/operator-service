@@ -52,9 +52,7 @@ def get_sql_status(agreement_id, job_id, owner):
         if row[10] and len(str(row[10])) > 2:
             # need to filter url from object
             outputs = json.loads(str(row[10]))
-            logger.error(f'Output este TODO {outputs}')
             for i, entry in enumerate(outputs):
-                logger.error(f'{i},{entry}')
                 if outputs[i] and "url" in outputs[i]:
                     del outputs[i]['url']
             temprow['results'] = outputs
