@@ -111,6 +111,7 @@ $ curl -X GET "http://localhost:8050/api/v1/operator/list" -H "accept: applicati
 ### ENV Vars
 
      ALGO_POD_TIMEOUT  = the maximum amount of time in seconds that an algorithm can use before it is killed
+     STORAGE_EXPIRY = the maximum amount of time in seconds to store the job files outputs
      POSTGRES_DB = Postgres database
      POSTGRES_USER = Postgresql user
      POSTGRES_PASSWORD = Postgresql password

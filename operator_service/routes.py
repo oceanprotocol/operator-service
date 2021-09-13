@@ -169,6 +169,7 @@ def start_compute_job():
         # get resources
         astage['compute']['resources'] = compute_resources_def
         astage['compute']['namespace'] = namespaces_def['namespace']
+        astage['compute']['storageExpiry'] = int(os.getenv("STORAGE_EXPIRY", 0))
 
     job_id = generate_new_id()
     logger.debug(f'Got job_id: {job_id}')
