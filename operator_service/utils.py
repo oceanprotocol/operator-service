@@ -2,13 +2,19 @@ import json
 import os
 import uuid
 import logging
+import mimetypes
+from cgi import parse_header
+from os import getenv
 
 from kubernetes.client.rest import ApiException
 from ocean_keeper import Keeper
+from flask import Response, request
 
 from operator_service.exceptions import InvalidSignatureError
 
-logger = logging.getLogger(__name__)
+logging.basicConfig(format='%(asctime)s %(message)s')
+logger = logging.getLogger('operator-service')
+logger.setLevel(logging.DEBUG)
 
 
 def generate_new_id():
@@ -106,3 +112,67 @@ def get_namespace_configs():
     resources = dict()
     resources['namespace'] = os.environ.get('DEFAULT_NAMESPACE', "ocean-compute")
     return resources
+
+def build_download_response(request, requests_session, url, content_type=None):
+    try:
+        download_request_headers = {}
+        download_response_headers = {}
+        is_range_request = bool(request.range)
+
+        if is_range_request:
+            download_request_headers = {"Range": request.headers.get("range")}
+            download_response_headers = download_request_headers
+        # IPFS utils
+        ipfs_x_api_key = getenv('X-API-KEY',None)
+        if ipfs_x_api_key:
+            download_request_headers['X-API-KEY'] = ipfs_x_api_key
+        ipfs_client_id = getenv('CLIENT-ID',None)
+        if ipfs_client_id:
+            download_request_headers['CLIENT-ID'] = ipfs_client_id
+             
+        response = requests_session.get(
+            url, headers=download_request_headers, stream=True, timeout=3
+        )
+
+        if not is_range_request:
+            filename = url.split("/")[-1]
+
+            content_disposition_header = response.headers.get("content-disposition")
+            if content_disposition_header:
+                _, content_disposition_params = parse_header(content_disposition_header)
+                content_filename = content_disposition_params.get("filename")
+                if content_filename:
+                    filename = content_filename
+
+            content_type_header = response.headers.get("content-type")
+            if content_type_header:
+                content_type = content_type_header
+
+            file_ext = os.path.splitext(filename)[1]
+            if file_ext and not content_type:
+                content_type = mimetypes.guess_type(filename)[0]
+            elif not file_ext and content_type:
+                # add an extension to filename based on the content_type
+                extension = mimetypes.guess_extension(content_type)
+                if extension:
+                    filename = filename + extension
+
+            download_response_headers = {
+                "Content-Disposition": f"attachment;filename={filename}",
+                "Access-Control-Expose-Headers": "Content-Disposition",
+            }
+
+        def _generate(_response):
+            for chunk in _response.iter_content(chunk_size=4096):
+                if chunk:
+                    yield chunk
+
+        return Response(
+            _generate(response),
+            response.status_code,
+            headers=download_response_headers,
+            content_type=content_type,
+        )
+    except Exception as e:
+        logger.error(f"Error preparing file download response: {str(e)}")
+        raise

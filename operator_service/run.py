@@ -24,6 +24,8 @@ def version():
     info['software'] = Metadata.TITLE
     info['version'] = get_version()
     info['address'] = os.getenv('OPERATOR_ADDRESS',None)
+    info['algoTimeLimit'] = os.getenv('ALGO_POD_TIMEOUT',None)
+    info['storageExpiry'] = os.getenv('STORAGE_EXPIRY',None)
     return jsonify(info)
 
 

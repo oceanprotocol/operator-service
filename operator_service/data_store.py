@@ -4,11 +4,12 @@ import logging
 import psycopg2
 import simplejson as json
 
+logging.basicConfig(format='%(asctime)s %(message)s')
+logger = logging.getLogger('operator-service')
+logger.setLevel(logging.DEBUG)
 
 def get_sql_status(agreement_id, job_id, owner):
     # enforce strings
-    logging.debug("Start get_sql_status\n")
-    logging.debug("Connected\n")
     params = dict()
     select_query = '''
     SELECT agreementId, workflowId, owner, status, statusText, 
@@ -30,9 +31,6 @@ def get_sql_status(agreement_id, job_id, owner):
         select_query = select_query + " AND owner=%(owner)s"
         params['owner'] = str(owner)
 
-    logging.debug(f'Got select_query: {select_query}')
-    logging.debug(f'Got params: {params}')
-
     result = []
     rows = _execute_query(select_query, params, 'get_sql_status', get_rows=True)
     if not rows:
@@ -49,14 +47,19 @@ def get_sql_status(agreement_id, job_id, owner):
         temprow['dateFinished'] = row[6]
         # temprow['configlogUrl']=row[7]
         # temprow['publishlogUrl']=row[8]
-        temprow['algorithmLogUrl'] = row[9]
-        temprow['resultsUrl'] = ''
+        # temprow['algorithmLogUrl'] = row[9]
+        temprow['results'] = ''
         if row[10] and len(str(row[10])) > 2:
-            temprow['resultsUrl'] = json.loads(str(row[10]))
-        temprow['resultsDid'] = ''
-        if row[11] and len(str(row[11])) > 2:
-            ddo_json = json.loads(str(row[11]))
-            temprow['resultsDid'] = ddo_json.get('id', '')
+            # need to filter url from object
+            outputs = json.loads(str(row[10]))
+            for i, entry in enumerate(outputs):
+                if outputs[i] and "url" in outputs[i]:
+                    del outputs[i]['url']
+            temprow['results'] = outputs
+        # temprow['resultsDid'] = ''
+        #if row[11] and len(str(row[11])) > 2:
+        #    ddo_json = json.loads(str(row[11]))
+        #    temprow['resultsDid'] = ddo_json.get('id', '')
         temprow['stopreq'] = row[12]
         temprow['removed'] = row[13]
         workflow_dict=json.loads(row[14])
@@ -72,10 +75,27 @@ def get_sql_status(agreement_id, job_id, owner):
         result.append(temprow)
     return result
 
+def get_sql_job_urls(job_id):
+    # get outputsURL & job owner as a tuple
+    params = dict()
+    select_query = '''
+    SELECT owner, outputsURL FROM jobs WHERE workflowId=%(jobId)s
+    '''
+    if job_id is None:
+        return None, None
+
+    params['jobId'] = str(job_id)
+    rows = _execute_query(select_query, params, 'get_sql_job_urls', get_rows=True)
+    if not rows or len(rows)<1:
+        return None, None
+    try:
+        result = json.loads(str(rows[0][1]))
+        owner = rows[0][0]
+        return result, owner
+    except:
+        return None, None
 
 def get_sql_jobs(agreement_id, job_id, owner):
-    logging.debug("Start get_sql_status\n")
-    logging.debug("Connected\n")
     params = dict()
     select_query = "SELECT workflowId FROM jobs WHERE 1=1"
     if agreement_id is not None:
@@ -87,15 +107,13 @@ def get_sql_jobs(agreement_id, job_id, owner):
     if owner is not None:
         select_query = select_query + " AND owner=%(owner)s"
         params['owner'] = str(owner)
-    logging.debug(f'Got select_query: {select_query}')
-    logging.debug(f'Got params: {params}')
     try:
         rows = _execute_query(select_query, params, 'get_sql_jobs', get_rows=True)
         if not rows:
             return []
         return [row[0] for row in rows]
     except (Exception, psycopg2.Error) as error:
-        logging.error(f'PG query error: {error}')
+        logger.error(f'PG query error: {error}')
         return
 
 def get_sql_running_jobs():
@@ -169,7 +187,7 @@ def get_pg_connection_and_cursor():
         cursor = connection.cursor()
         return connection, cursor
     except (Exception, psycopg2.Error) as error:
-        logging.error(f'New PG connect error: {error}')
+        logger.error(f'New PG connect error: {error}')
         return None, None
 
 
@@ -191,7 +209,7 @@ def _execute_query(query, record, msg, get_rows=False):
             connection.commit()
 
     except (Exception, psycopg2.Error) as error:
-        logging.error(f'Got PG error in {msg}: {error}')
+        logger.error(f'Got PG error in {msg}: {error}')
     finally:
         # closing database connection.
         if connection:
