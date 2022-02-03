@@ -311,6 +311,9 @@ def get_compute_job_status():
     """
     try:
         data = request.args if request.args else request.json
+        if data is None:
+          msg = f'You have to specify one of agreementId, jobId or owner'
+          return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
         agreement_id = data.get('agreementId')
         owner = data.get('owner')
         job_id = data.get('jobId')
