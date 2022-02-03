@@ -215,10 +215,13 @@ def stop_compute_job():
     """
     try:
         data = request.args if request.args else request.json
+        if data is None:
+          msg = f'You have to specify one of agreementId, jobId or owner'
+          return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
 
-        agreement_id = data.get('agreementId')
-        owner = data.get('owner')
-        job_id = data.get('jobId')
+        agreement_id = data.get('agreementId', None)
+        owner = data.get('owner', None)
+        job_id = data.get('jobId', None)
 
         if not agreement_id or len(agreement_id) < 2:
             agreement_id = None
@@ -244,6 +247,10 @@ def stop_compute_job():
     except ApiException as e:
         logger.error(f'Exception when stopping compute job: {e}')
         return Response(json.dumps(error=f'Error stopping job: {e}'), 400, headers=standard_headers)
+    except Exception as e:
+        msg = f'{e}'
+        logger.error(msg)
+        return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
 
 
 @services.route('/compute', methods=['DELETE'])
@@ -339,6 +346,10 @@ def get_compute_job_status():
         msg = f'Error getting the status: {e}'
         logger.error(msg)
         return Response(json.dumps({"error":msg}), 400)
+    except Exception as e:
+        msg = f'{e}'
+        logger.error(msg)
+        return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
 
 @services.route('/runningjobs', methods=['GET'])
 def get_running_jobs():
@@ -356,12 +367,14 @@ def get_running_jobs():
     try:
         api_response = get_sql_running_jobs()
         return Response(json.dumps(api_response), 200, headers=standard_headers)
-
     except ApiException as e:
         msg = f'Error getting the status: {e}'
         logger.error(msg)
         return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
-
+    except Exception as e:
+        msg = f'{e}'
+        logger.error(msg)
+        return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
 
 @services.route('/getResult', methods=['GET'])
 def get_indexed_result():
