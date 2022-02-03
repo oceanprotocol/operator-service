@@ -1,9 +1,10 @@
 import os
 from os import path
 import logging
+import json
 
 import kubernetes
-from flask import Blueprint, jsonify, request, Response
+from flask import Blueprint, request, Response
 from kubernetes.client.rest import ApiException
 
 from operator_service.config import Config
@@ -131,29 +132,29 @@ def start_compute_job():
     ]
     msg, status = check_required_attributes(required_attributes, data, 'POST:/compute')
     if msg:
-        return Response(jsonify(error=msg), status, headers=standard_headers)
+        return Response(json.dumps({"error":msg}), status, headers=standard_headers)
 
     workflow = data.get('workflow')
     agreement_id = data.get('agreementId')
     owner = data.get('owner')
     if not workflow:
-        return Response(jsonify(error=f'`workflow` is required in the payload and must '
+        return Response(json.dumps(error=f'`workflow` is required in the payload and must '
                        f'include workflow stages'), 400, headers=standard_headers)
 
     # verify provider's signature
     msg, status = process_signature_validation(data.get('providerSignature'), agreement_id)
     if msg:
-        return Response(jsonify(error=f'`providerSignature` of agreementId is required.'), status, headers=standard_headers)
+        return Response(json.dumps(error=f'`providerSignature` of agreementId is required.'), status, headers=standard_headers)
 
     stages = workflow.get('stages')
     if not stages:
         logger.error(f'Missing stages')
-        return Response(jsonify(error='Missing stages'), 400, headers=standard_headers)
+        return Response(json.dumps(error='Missing stages'), 400, headers=standard_headers)
 
     for _attr in ('algorithm', 'compute', 'input', 'output'):
         if _attr not in stages[0]:
             logger.error(f'Missing {_attr} in stage 0')
-            return Response(jsonify(error=f'Missing {_attr} in stage 0'), 400, headers=standard_headers)
+            return Response(json.dumps(error=f'Missing {_attr} in stage 0'), 400, headers=standard_headers)
     # loop through stages and add resources
     timeout = int(os.getenv("ALGO_POD_TIMEOUT", 0))
     compute_resources_def = get_compute_resources()
@@ -182,7 +183,7 @@ def start_compute_job():
     logger.debug(f'Got body: {body}')
     create_sql_job(agreement_id, str(job_id), owner,body,namespaces_def['namespace'])
     status_list = get_sql_status(agreement_id, str(job_id), owner)
-    return Response(jsonify(status_list), 200, headers=standard_headers)
+    return Response(json.dumps(status_list), 200, headers=standard_headers)
 
 
 @services.route('/compute', methods=['PUT'])
@@ -230,7 +231,7 @@ def stop_compute_job():
         if owner is None and agreement_id is None and job_id is None:
             msg = f'You have to specify one of agreementId, jobId or owner'
             logger.error(msg)
-            return Response(jsonify(error=msg), 400, headers=standard_headers)
+            return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
         jobs_list = get_sql_jobs(agreement_id, job_id, owner)
         for ajob in jobs_list:
             name = ajob
@@ -238,11 +239,11 @@ def stop_compute_job():
             stop_sql_job(name)
 
         status_list = get_sql_status(agreement_id, job_id, owner)
-        return Response(jsonify(status_list), 200, headers=standard_headers)
+        return Response(json.dumps(status_list), 200, headers=standard_headers)
 
     except ApiException as e:
         logger.error(f'Exception when stopping compute job: {e}')
-        return Response(jsonify(error=f'Error stopping job: {e}'), 400, headers=standard_headers)
+        return Response(json.dumps(error=f'Error stopping job: {e}'), 400, headers=standard_headers)
 
 
 @services.route('/compute', methods=['DELETE'])
@@ -273,7 +274,7 @@ def delete_compute_job():
         type: string
     """
     #since op-engine handles this, there is no need for this endpoint. Will just keep it here for backwards compat
-    return Response(jsonify(""), 200, headers=standard_headers)
+    return Response(json.dumps(""), 200, headers=standard_headers)
 
 
 @services.route('/compute', methods=['GET'])
@@ -326,15 +327,15 @@ def get_compute_job_status():
         if owner is None and agreement_id is None and job_id is None:
             msg = f'You have to specify one of agreementId, jobId or owner'
             logger.error(msg)
-            return Response(jsonify(error=msg), 400, headers=standard_headers)
+            return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
         logger.debug(f"Got status request for {agreement_id}, {job_id}, {owner}")
         api_response = get_sql_status(agreement_id, job_id, owner)
-        return Response(jsonify(api_response), 200, headers=standard_headers)
+        return Response(json.dumps(api_response), 200, headers=standard_headers)
 
     except ApiException as e:
         msg = f'Error getting the status: {e}'
         logger.error(msg)
-        return Response(jsonify(error=msg), 400)
+        return Response(json.dumps({"error":msg}), 400)
 
 @services.route('/runningjobs', methods=['GET'])
 def get_running_jobs():
@@ -351,12 +352,12 @@ def get_running_jobs():
     """
     try:
         api_response = get_sql_running_jobs()
-        return Response(jsonify(api_response), 200, headers=standard_headers)
+        return Response(json.dumps(api_response), 200, headers=standard_headers)
 
     except ApiException as e:
         msg = f'Error getting the status: {e}'
         logger.error(msg)
-        return Response(jsonify(error=msg), 400, headers=standard_headers)
+        return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
 
 
 @services.route('/getResult', methods=['GET'])
@@ -400,23 +401,27 @@ def get_indexed_result():
     try:
         requests_session = get_requests_session()
         data = request.args if request.args else request.json
-        index = int(data.get('index'))
-        job_id = data.get('jobId')
-        if index is None and job_id is None:
-          msg = f'Both index & job_id are requred'
-          return Response(jsonify(error=msg), 400, headers=standard_headers)
+        if data is None:
+          msg = f'Both index & job_id are required'
+          return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
+        index = data.get('index', None)
+        job_id = data.get('jobId', None)
+        if index is None or job_id is None:
+          msg = f'Both index & job_id are required'
+          return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
+        index = int(index)
         outputs, owner = get_sql_job_urls(job_id)
         # TO DO - check owner here
         logger.info(f"Got {owner}")
         logger.info(f"Got {outputs}")
         if outputs is None or not isinstance(outputs, list):
           msg = f'No results for job {job_id}'
-          return Response(jsonify(error=msg), 404, headers=standard_headers)
+          return Response(json.dumps({"error":msg}), 404, headers=standard_headers)
         # check the index
         logger.info(f"Len outputs {len(outputs)}, index: {index}")
-        if index >= len(outputs):
+        if int(index) >= len(outputs):
           msg = f'No such index {index} in this compute job'
-          return Response(jsonify(error=msg), 404, headers=standard_headers)
+          return Response(json.dumps({"error":msg}), 404, headers=standard_headers)
         logger.info(f"Trying: {outputs[index]['url']}")
         return build_download_response(
             request, requests_session, outputs[index]['url'], None
@@ -425,7 +430,11 @@ def get_indexed_result():
     except ApiException as e:
         msg = f'Error getting the status: {e}'
         logger.error(msg)
-        return Response(jsonify(error=msg), 400, headers=standard_headers)
+        return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
+    except Exception as e:
+        msg = f'{e}'
+        logger.error(msg)
+        return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
 
 
 def get_requests_session() -> Session:
