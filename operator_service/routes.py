@@ -138,23 +138,23 @@ def start_compute_job():
     agreement_id = data.get('agreementId')
     owner = data.get('owner')
     if not workflow:
-        return Response(json.dumps(error=f'`workflow` is required in the payload and must '
-                       f'include workflow stages'), 400, headers=standard_headers)
+        return Response(json.dumps({"error":f'`workflow` is required in the payload and must '
+                       f'include workflow stages'}), 400, headers=standard_headers)
 
     # verify provider's signature
     msg, status = process_signature_validation(data.get('providerSignature'), agreement_id)
     if msg:
-        return Response(json.dumps(error=f'`providerSignature` of agreementId is required.'), status, headers=standard_headers)
+        return Response(json.dumps({"error":f'`providerSignature` of agreementId is required.'}), status, headers=standard_headers)
 
     stages = workflow.get('stages')
     if not stages:
         logger.error(f'Missing stages')
-        return Response(json.dumps(error='Missing stages'), 400, headers=standard_headers)
+        return Response(json.dumps({"error":'Missing stages'}), 400, headers=standard_headers)
 
     for _attr in ('algorithm', 'compute', 'input', 'output'):
         if _attr not in stages[0]:
             logger.error(f'Missing {_attr} in stage 0')
-            return Response(json.dumps(error=f'Missing {_attr} in stage 0'), 400, headers=standard_headers)
+            return Response(json.dumps({"error":f'Missing {_attr} in stage 0'}), 400, headers=standard_headers)
     # loop through stages and add resources
     timeout = int(os.getenv("ALGO_POD_TIMEOUT", 0))
     compute_resources_def = get_compute_resources()
@@ -246,7 +246,7 @@ def stop_compute_job():
 
     except ApiException as e:
         logger.error(f'Exception when stopping compute job: {e}')
-        return Response(json.dumps(error=f'Error stopping job: {e}'), 400, headers=standard_headers)
+        return Response(json.dumps({"error":f'Error stopping job: {e}'}), 400, headers=standard_headers)
     except Exception as e:
         msg = f'{e}'
         logger.error(msg)
