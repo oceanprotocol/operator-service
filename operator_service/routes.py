@@ -372,7 +372,7 @@ def get_indexed_result():
     parameters:
       - name: index
         in: query
-        description: output index
+        description: result index
         type: number
       - name: jobId
         in: query
