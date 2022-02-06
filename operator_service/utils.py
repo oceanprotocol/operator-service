@@ -7,7 +7,8 @@ from cgi import parse_header
 from os import getenv
 
 from kubernetes.client.rest import ApiException
-from ocean_keeper import Keeper
+from eth_account.account import Account
+from eth_account.messages import encode_defunct
 from flask import Response, request
 
 from operator_service.exceptions import InvalidSignatureError
@@ -54,28 +55,23 @@ def check_required_attributes(required_attributes, data, method):
 
 
 def process_signature_validation(signature, original_msg):
+    if not signature or not original_msg:
+            return f'`providerSignature` of agreementId is required.', 400, None
+    try:
+        address = Account.recover_message(
+            encode_defunct(text=original_msg), signature=signature
+        )
+    except Exception as e:
+        return 'Failed to recover address', 400, None
     if is_verify_signature_required():
         # verify provider's signature
         allowed_providers = get_list_of_allowed_providers()
-        if not signature:
-            return f'`providerSignature` of agreementId is required.', 400
-
-        try:
-            verify_signature(signature, original_msg, allowed_providers)
-        except InvalidSignatureError as e:
-            return f'{e}', 401
-
-    return '', None
-
-
-def verify_signature(signature, original_msg, allowed_addresses):
-    address = Keeper.personal_ec_recover(original_msg, signature)
-    if address.lower() in allowed_addresses:
-        return
-
-    msg = f'Invalid signature {signature} of documentId {original_msg},' \
-          f'the signing ethereum account {address} is not authorized to use this service.'
-    raise InvalidSignatureError(msg)
+        if address.lower() not in allowed_providers:
+            msg = f'Invalid signature {signature} of documentId {original_msg},' \
+            f'the signing ethereum account {address} is not authorized to use this service.'
+            return msg, 401, None
+    
+    return '', None, address
 
 
 def get_list_of_allowed_providers():

@@ -8,7 +8,17 @@ from flask import Blueprint, request, Response
 from kubernetes.client.rest import ApiException
 
 from operator_service.config import Config
-from operator_service.data_store import create_sql_job, get_sql_status, get_sql_jobs, stop_sql_job, remove_sql_job, get_sql_running_jobs, get_sql_job_urls
+from operator_service.data_store import (
+  create_sql_job,
+  get_sql_status,
+  get_sql_jobs,
+  stop_sql_job,
+  remove_sql_job,
+  get_sql_running_jobs,
+  get_sql_job_urls,
+  get_sql_enviroments,
+  check_environment_exists
+)
 from operator_service.kubernetes_api import KubeAPI
 from operator_service.utils import (
     create_compute_job,
@@ -59,7 +69,8 @@ def start_compute_job():
           example: {
                         "agreementId":"0x111111",
                         "owner":"0xC41808BBef371AD5CFc76466dDF9dEe228d2BdAA",
-                        "providerSignature":"ae01",
+                        "providerSignature":"0xc3e6de65bfa3527409d8df6232e084e3cea0bae3bc85f7401e98fac56f9706157e42089b4b2b45f0f019bc94e7e4806afe8c86a6bab9c616d5010891e0246e761c",
+                        "environment":"ocean-compute",
                         "workflow":{
                             "stages": [
                               {
@@ -73,18 +84,14 @@ def start_compute_job():
                                         "index": 0
                                     },
                                     {
-                                        "id": "did:op:1384941e6f0b46299b6e515723df3d8e8e5d1fb175554467a1cb7bc613f5c72e",
+                                        "id": "did:op:0c47cf2a09ae137eb473b6f9bb3dbb81ff4df8a69770253c0ff1f9e3c5f4639d",
                                         "url": [
                                             "https://data.ct.gov/api/views/2fi9-sgi3/rows.csv?accessType=DOWNLOAD"
                                         ],
                                         "index": 1
                                     }
                                 ],
-                                "compute": {
-                                    "Instances": 1,
-                                    "namespace": "withgpu",
-                                    "maxtime": 3600
-                                },
+                                "compute": {},
                                 "algorithm": {
                                     "id": "did:op:87bdaabb33354d2eb014af5091c604fb4b0f67dc6cca4d18a96547bffdc27bcf",
                                     "url": "https://raw.githubusercontent.com/oceanprotocol/test-algorithm/master/javascript/algo.js",
@@ -102,7 +109,7 @@ def start_compute_job():
                                     "metadata": {
                                         "name": "Workflow output"
                                     },
-                                    "metadataUri": "https://aquarius.marketplace.dev-ocean.com",
+                                    "metadataUri": "https://aquariusv4.oceanprotocol.com/",
                                     "secretStoreUri": "https://secret-store.nile.dev-ocean.com",
                                     "whitelist": [
                                         "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e",
@@ -140,48 +147,34 @@ def start_compute_job():
     if not workflow:
         return Response(json.dumps({"error":f'`workflow` is required in the payload and must '
                        f'include workflow stages'}), 400, headers=standard_headers)
-
+    environment = data.get('environment')
+    if not environment or not check_environment_exists(environment):
+            logger.error(f'Environment invalid or does not exists')
+            return Response(json.dumps({"error":'Environment invalid or does not exists'}), 400, headers=standard_headers)
     # verify provider's signature
-    msg, status = process_signature_validation(data.get('providerSignature'), agreement_id)
+    msg, status, provider_address = process_signature_validation(data.get('providerSignature'), agreement_id)
     if msg:
-        return Response(json.dumps({"error":f'`providerSignature` of agreementId is required.'}), status, headers=standard_headers)
+        return Response(json.dumps({"error":msg}), status, headers=standard_headers)
 
     stages = workflow.get('stages')
     if not stages:
         logger.error(f'Missing stages')
         return Response(json.dumps({"error":'Missing stages'}), 400, headers=standard_headers)
-
+    if len(stages)>1:
+        logger.error(f'Multiple stages are not supported yet')
+        return Response(json.dumps({"error":'Multiple stages are not supported yet'}), 400, headers=standard_headers)
     for _attr in ('algorithm', 'compute', 'input', 'output'):
         if _attr not in stages[0]:
             logger.error(f'Missing {_attr} in stage 0')
             return Response(json.dumps({"error":f'Missing {_attr} in stage 0'}), 400, headers=standard_headers)
-    # loop through stages and add resources
-    timeout = int(os.getenv("ALGO_POD_TIMEOUT", 0))
-    compute_resources_def = get_compute_resources()
-    namespaces_def = get_namespace_configs()
-    for count, astage in enumerate(workflow['stages']):
-        # check timeouts
-        if timeout > 0:
-            if 'maxtime' in astage['compute']:
-                maxtime = int(astage['compute']['maxtime'])
-            else:
-                maxtime = 0
-            if timeout < maxtime or maxtime <= 0:
-                astage['compute']['maxtime'] = timeout
-                logger.debug(f"Maxtime in workflow was {maxtime}. Overwritten to {timeout}")
-        # get resources
-        astage['compute']['resources'] = compute_resources_def
-        astage['compute']['namespace'] = namespaces_def['namespace']
-        astage['compute']['storageExpiry'] = int(os.getenv("STORAGE_EXPIRY", 0))
-
     job_id = generate_new_id()
     logger.debug(f'Got job_id: {job_id}')
     body = create_compute_job(
-        workflow, job_id, config.group, config.version, namespaces_def['namespace']
+        workflow, job_id, config.group, config.version, environment
     )
     body['metadata']['secret'] = generate_new_id()
     logger.debug(f'Got body: {body}')
-    create_sql_job(agreement_id, str(job_id), owner,body,namespaces_def['namespace'])
+    create_sql_job(agreement_id, str(job_id), owner,body,environment, provider_address)
     status_list = get_sql_status(agreement_id, str(job_id), owner)
     return Response(json.dumps(status_list), 200, headers=standard_headers)
 
@@ -452,6 +445,26 @@ def get_indexed_result():
         logger.error(msg)
         return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
 
+@services.route('/enviroments', methods=['GET'])
+def get_enviroments():
+    """
+    Get running jobs
+    ---
+    tags:
+      - operation
+    consumes:
+      - application/json
+    responses:
+      200:
+        description: Get correctly the status
+    """
+    try:
+        api_response = get_sql_enviroments(logger)
+        return Response(json.dumps(api_response), 200, headers=standard_headers)
+    except Exception as e:
+        msg = f'{e}'
+        logger.error(msg)
+        return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
 
 def get_requests_session() -> Session:
     """
