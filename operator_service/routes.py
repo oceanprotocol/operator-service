@@ -16,7 +16,7 @@ from operator_service.data_store import (
   remove_sql_job,
   get_sql_running_jobs,
   get_sql_job_urls,
-  get_sql_enviroments,
+  get_sql_environments,
   check_environment_exists
 )
 from operator_service.kubernetes_api import KubeAPI
@@ -445,10 +445,10 @@ def get_indexed_result():
         logger.error(msg)
         return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
 
-@services.route('/enviroments', methods=['GET'])
-def get_enviroments():
+@services.route('/environments', methods=['GET'])
+def get_environments():
     """
-    Get running jobs
+    Get environments
     ---
     tags:
       - operation
@@ -459,7 +459,7 @@ def get_enviroments():
         description: Get correctly the status
     """
     try:
-        api_response = get_sql_enviroments(logger)
+        api_response = get_sql_environments(logger)
         return Response(json.dumps(api_response), 200, headers=standard_headers)
     except Exception as e:
         msg = f'{e}'

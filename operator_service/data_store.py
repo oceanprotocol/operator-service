@@ -150,13 +150,13 @@ def get_sql_running_jobs():
         result.append(temprow)
     return result
 
-def get_sql_enviroments(logger):
+def get_sql_environments(logger):
     params = dict()
     select_query = '''
     SELECT namespace, status,extract(epoch from lastping) as lastping from envs
     '''
     result = []
-    rows = _execute_query(select_query, params, 'get_sql_enviroments', get_rows=True)
+    rows = _execute_query(select_query, params, 'get_sql_environments', get_rows=True)
     if not rows:
         return result
     for row in rows:
@@ -166,13 +166,13 @@ def get_sql_enviroments(logger):
         result.append(temprow)
     return result
 
-def check_environment_exists(enviroment):
+def check_environment_exists(environment):
     params = dict()
     select_query = '''
     SELECT namespace, status,extract(epoch from lastping) as lastping from envs WHERE namespace=%(env)s
     '''
-    params['env'] = enviroment
-    rows = _execute_query(select_query, params, 'check_enviroment_exists', get_rows=True)
+    params['env'] = environment
+    rows = _execute_query(select_query, params, 'check_environment_exists', get_rows=True)
     if not rows:
         return False
     else:

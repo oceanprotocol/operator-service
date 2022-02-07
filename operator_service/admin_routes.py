@@ -74,14 +74,14 @@ def init_pgsql_compute():
         cursor.execute(create_index_query)
         #create announce function
         create_table_query = """
-        CREATE OR REPLACE FUNCTION announce(enviroment varchar(255), fullstatus text)
+        CREATE OR REPLACE FUNCTION announce(environment varchar(255), fullstatus text)
           RETURNS TABLE (workflow varchar(255))
           LANGUAGE plpgsql
           AS $function$
           BEGIN
-            INSERT INTO envs(namespace, status, lastping) VALUES(enviroment,fullstatus,NOW()) ON CONFLICT (namespace) DO UPDATE SET status = EXCLUDED.status, lastping = EXCLUDED.lastping;
+            INSERT INTO envs(namespace, status, lastping) VALUES(environment,fullstatus,NOW()) ON CONFLICT (namespace) DO UPDATE SET status = EXCLUDED.status, lastping = EXCLUDED.lastping;
             RETURN QUERY
-            SELECT workflowid FROM jobs WHERE namespace=enviroment AND status=1;
+            SELECT workflowid FROM jobs WHERE namespace=environment AND status=1;
           END
         $function$;
         """
