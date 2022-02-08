@@ -71,6 +71,7 @@ def start_compute_job():
                         "owner":"0xC41808BBef371AD5CFc76466dDF9dEe228d2BdAA",
                         "providerSignature":"0xc3e6de65bfa3527409d8df6232e084e3cea0bae3bc85f7401e98fac56f9706157e42089b4b2b45f0f019bc94e7e4806afe8c86a6bab9c616d5010891e0246e761c",
                         "environment":"ocean-compute",
+                        "nonce": 1234,
                         "workflow":{
                             "stages": [
                               {
@@ -135,7 +136,9 @@ def start_compute_job():
         'workflow',
         'agreementId',
         'owner',
-        'providerSignature'
+        'providerSignature',
+        'environment',
+        'nonce'
     ]
     msg, status = check_required_attributes(required_attributes, data, 'POST:/compute')
     if msg:
@@ -144,15 +147,16 @@ def start_compute_job():
     workflow = data.get('workflow')
     agreement_id = data.get('agreementId')
     owner = data.get('owner')
+    nonce = data.get('nonce')
     if not workflow:
         return Response(json.dumps({"error":f'`workflow` is required in the payload and must '
                        f'include workflow stages'}), 400, headers=standard_headers)
     environment = data.get('environment')
-    if not environment or not check_environment_exists(environment):
+    if not check_environment_exists(environment):
             logger.error(f'Environment invalid or does not exists')
             return Response(json.dumps({"error":'Environment invalid or does not exists'}), 400, headers=standard_headers)
     # verify provider's signature
-    msg, status, provider_address = process_signature_validation(data.get('providerSignature'), agreement_id)
+    msg, status, provider_address = process_signature_validation(data.get('providerSignature'), f"{owner}{nonce}")
     if msg:
         return Response(json.dumps({"error":msg}), status, headers=standard_headers)
 
@@ -205,9 +209,20 @@ def stop_compute_job():
         in: query
         description: providerSignature
         type: string
+      - name: nonce
+        in: query
+        description: nonce
     """
     try:
         data = request.args if request.args else request.json
+        required_attributes = [
+          'owner',
+          'providerSignature',
+          'nonce'
+        ]
+        msg, status = check_required_attributes(required_attributes, data, 'PUT:/compute')
+        if msg:
+            return Response(json.dumps({"error":msg}), status, headers=standard_headers)
         if data is None:
           msg = f'You have to specify one of agreementId, jobId or owner'
           return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
@@ -215,7 +230,6 @@ def stop_compute_job():
         agreement_id = data.get('agreementId', None)
         owner = data.get('owner', None)
         job_id = data.get('jobId', None)
-
         if not agreement_id or len(agreement_id) < 2:
             agreement_id = None
 
@@ -228,6 +242,15 @@ def stop_compute_job():
             msg = f'You have to specify one of agreementId, jobId or owner'
             logger.error(msg)
             return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
+        nonce = data.get('nonce')
+        # verify provider's signature
+        if job_id:
+          sign_message = f"{owner}{job_id}{nonce}"
+        else:
+          sign_message = f"{owner}{nonce}"
+        msg, status, provider_address = process_signature_validation(data.get('providerSignature'), sign_message)
+        if msg:
+            return Response(json.dumps({"error":msg}), status, headers=standard_headers)
         jobs_list = get_sql_jobs(agreement_id, job_id, owner)
         for ajob in jobs_list:
             name = ajob
@@ -303,6 +326,9 @@ def get_compute_job_status():
         in: query
         description: providerSignature
         type: string
+      - name: nonce
+        in: query
+        description: nonce
     responses:
       200:
         description: Get correctly the status
@@ -314,6 +340,14 @@ def get_compute_job_status():
         if data is None:
           msg = f'You have to specify one of agreementId, jobId or owner'
           return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
+        required_attributes = [
+          'owner',
+          'providerSignature',
+          'nonce'
+        ]
+        msg, status = check_required_attributes(required_attributes, data, 'GET:/compute')
+        if msg:
+            return Response(json.dumps({"error":msg}), status, headers=standard_headers)
         agreement_id = data.get('agreementId', None)
         owner = data.get('owner', None)
         job_id = data.get('jobId', None)
@@ -331,6 +365,15 @@ def get_compute_job_status():
             msg = f'You have to specify one of agreementId, jobId or owner'
             logger.error(msg)
             return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
+        nonce = data.get('nonce', None)
+        # verify provider's signature
+        if job_id:
+          sign_message = f"{owner}{job_id}{nonce}"
+        else:
+          sign_message = f"{owner}{nonce}"
+        msg, status, provider_address = process_signature_validation(data.get('providerSignature'), sign_message)
+        if msg:
+            return Response(json.dumps({"error":msg}), status, headers=standard_headers)
         logger.debug(f"Got status request for {agreement_id}, {job_id}, {owner}")
         api_response = get_sql_status(agreement_id, job_id, owner)
         return Response(json.dumps(api_response), 200, headers=standard_headers)
@@ -391,13 +434,9 @@ def get_indexed_result():
         in: query
         description: providerSignature
         type: string
-      - name: consumerSignature
+      - name: owner
         in: query
-        description: consumerSignature
-        type: string
-      - name: consumerAddress
-        in: query
-        description: consumerAddress
+        description: owner of the job
         type: string
     responses:
       200:
@@ -413,14 +452,26 @@ def get_indexed_result():
         if data is None:
           msg = f'Both index & job_id are required'
           return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
+        required_attributes = [
+          'owner',
+          'providerSignature',
+          'nonce',
+          'index',
+          'jobId'
+        ]
+        msg, status = check_required_attributes(required_attributes, data, 'GET:/getResult')
+        if msg:
+            return Response(json.dumps({"error":msg}), status, headers=standard_headers)
         index = data.get('index', None)
         job_id = data.get('jobId', None)
-        if index is None or job_id is None:
-          msg = f'Both index & job_id are required'
-          return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
+        owner = data.get('owner', None)
+        nonce = data.get('nonce', None)
+        # verify provider's signature
+        msg, status, provider_address = process_signature_validation(data.get('providerSignature'), f"{owner}{nonce}")
+
         index = int(index)
         outputs, owner = get_sql_job_urls(job_id)
-        # TO DO - check owner here
+        # TO DO - check owner here & provider
         logger.info(f"Got {owner}")
         logger.info(f"Got {outputs}")
         if outputs is None or not isinstance(outputs, list):
