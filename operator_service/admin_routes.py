@@ -54,12 +54,38 @@ def init_pgsql_compute():
                 namespace varchar(255),
                 stopreq smallint default 0,
                 removed smallint default 0,
-                workflow text
+                workflow text,
+                provider varchar(255)
             ); 
         """
         cursor.execute(create_table_query)
         create_index_query = '''CREATE unique INDEX IF NOT EXISTS uniq_agreementId_workflowId ON jobs (agreementId,workflowId)'''
         cursor.execute(create_index_query)
+        # create envs tabls
+        create_table_query = """
+            CREATE TABLE IF NOT EXISTS envs 
+                (namespace           varchar(255) NOT NULL,
+                status         text,
+                lastping timestamp without time zone default NOW()
+            ); 
+        """
+        cursor.execute(create_table_query)
+        create_index_query = '''CREATE unique INDEX IF NOT EXISTS unique_namespace ON envs (namespace)'''
+        cursor.execute(create_index_query)
+        #create announce function
+        create_table_query = """
+        CREATE OR REPLACE FUNCTION announce(environment varchar(255), fullstatus text)
+          RETURNS TABLE (workflow varchar(255))
+          LANGUAGE plpgsql
+          AS $function$
+          BEGIN
+            INSERT INTO envs(namespace, status, lastping) VALUES(environment,fullstatus,NOW()) ON CONFLICT (namespace) DO UPDATE SET status = EXCLUDED.status, lastping = EXCLUDED.lastping;
+            RETURN QUERY
+            SELECT workflowid FROM jobs WHERE namespace=environment AND status=1;
+          END
+        $function$;
+        """
+        cursor.execute(create_table_query)
         connection.commit()
     except (Exception, psycopg2.Error) as error:
         output = output + "Error PostgreSQL:" + str(error)

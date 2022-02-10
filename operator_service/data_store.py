@@ -150,15 +150,43 @@ def get_sql_running_jobs():
         result.append(temprow)
     return result
 
+def get_sql_environments(logger):
+    params = dict()
+    select_query = '''
+    SELECT namespace, status,extract(epoch from lastping) as lastping from envs
+    '''
+    result = []
+    rows = _execute_query(select_query, params, 'get_sql_environments', get_rows=True)
+    if not rows:
+        return result
+    for row in rows:
+        temprow = json.loads(row[1])
+        temprow['lastSeen'] = row[2]
+        temprow['id'] = row[0]
+        result.append(temprow)
+    return result
 
-def create_sql_job(agreement_id, job_id, owner, body, namespace):
+def check_environment_exists(environment):
+    params = dict()
+    select_query = '''
+    SELECT namespace, status,extract(epoch from lastping) as lastping from envs WHERE namespace=%(env)s
+    '''
+    params['env'] = environment
+    rows = _execute_query(select_query, params, 'check_environment_exists', get_rows=True)
+    if not rows:
+        return False
+    else:
+        return True
+    
+
+def create_sql_job(agreement_id, job_id, owner, body, namespace, provider_address):
     postgres_insert_query = """
         INSERT 
             INTO jobs 
-                (agreementId,workflowId,owner,status,statusText,workflow,namespace) 
+                (agreementId,workflowId,owner,status,statusText,workflow,namespace,provider) 
             VALUES 
-                (%s, %s, %s, %s, %s,%s,%s)"""
-    record_to_insert = (str(agreement_id), str(job_id), str(owner), 1, "Warming up", json.dumps(body), namespace)
+                (%s, %s, %s, %s, %s,%s,%s,%s)"""
+    record_to_insert = (str(agreement_id), str(job_id), str(owner), 1, "Warming up", json.dumps(body), namespace, provider_address)
     return _execute_query(postgres_insert_query, record_to_insert, 'create_sql_job')
 
 
