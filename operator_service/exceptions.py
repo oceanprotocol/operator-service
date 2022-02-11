@@ -1,4 +1,2 @@
-
-
 class InvalidSignatureError(Exception):
     """ """
