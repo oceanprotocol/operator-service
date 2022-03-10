@@ -180,6 +180,9 @@ def start_compute_job():
     logger.debug(f'Got body: {body}')
     create_sql_job(agreement_id, str(job_id), owner,body,environment, provider_address)
     status_list = get_sql_status(agreement_id, str(job_id), owner)
+    # Convert every value from the list of dicts to a string
+    status_list = [{k: str(v) for k, v in d.items()} for d in status_list]
+    
     return Response(json.dumps(status_list), 200, headers=standard_headers)
 
 
