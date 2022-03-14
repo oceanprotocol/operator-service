@@ -24,7 +24,7 @@ install_requirements = [
     'kubernetes==10.0.0',
     'requests>=2.21.0',
     'gunicorn==19.9.0',
-    'PyYAML==5.1',
+    'PyYAML==5.4',
     'pytz==2018.5',
     'simplejson>=3.13.2',
     'psycopg2>=2.8.4',
