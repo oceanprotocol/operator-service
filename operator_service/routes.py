@@ -9,15 +9,15 @@ from kubernetes.client.rest import ApiException
 
 from operator_service.config import Config
 from operator_service.data_store import (
-  create_sql_job,
-  get_sql_status,
-  get_sql_jobs,
-  stop_sql_job,
-  remove_sql_job,
-  get_sql_running_jobs,
-  get_sql_job_urls,
-  get_sql_environments,
-  check_environment_exists
+    create_sql_job,
+    get_sql_status,
+    get_sql_jobs,
+    stop_sql_job,
+    remove_sql_job,
+    get_sql_running_jobs,
+    get_sql_job_urls,
+    get_sql_environments,
+    check_environment_exists,
 )
 from operator_service.kubernetes_api import KubeAPI
 from operator_service.utils import (
@@ -27,21 +27,21 @@ from operator_service.utils import (
     process_signature_validation,
     get_compute_resources,
     get_namespace_configs,
-    build_download_response
+    build_download_response,
 )
 from requests.adapters import HTTPAdapter
 from requests.sessions import Session
 
-logging.basicConfig(format='%(asctime)s %(message)s')
-logger = logging.getLogger('operator-service')
+logging.basicConfig(format="%(asctime)s %(message)s")
+logger = logging.getLogger("operator-service")
 logger.setLevel(logging.DEBUG)
 
-services = Blueprint('services', __name__)
+services = Blueprint("services", __name__)
 
 standard_headers = {"Content-type": "application/json", "Connection": "close"}
 
 # Configuration to connect to k8s.
-if not path.exists('/.dockerenv'):
+if not path.exists("/.dockerenv"):
     kubernetes.config.load_kube_config()
 else:
     kubernetes.config.load_incluster_config()
@@ -49,7 +49,7 @@ else:
 config = Config()
 
 
-@services.route('/compute', methods=['POST'])
+@services.route("/compute", methods=["POST"])
 def start_compute_job():
     """
     Create and start the compute job
@@ -133,52 +133,78 @@ def start_compute_job():
 
     data = request.args if request.args else request.json
     required_attributes = [
-        'workflow',
-        'agreementId',
-        'owner',
-        'providerSignature',
-        'environment',
-        'nonce'
+        "workflow",
+        "agreementId",
+        "owner",
+        "providerSignature",
+        "environment",
+        "nonce",
     ]
-    msg, status = check_required_attributes(required_attributes, data, 'POST:/compute')
+    msg, status = check_required_attributes(required_attributes, data, "POST:/compute")
     if msg:
-        return Response(json.dumps({"error":msg}), status, headers=standard_headers)
+        return Response(json.dumps({"error": msg}), status, headers=standard_headers)
 
-    workflow = data.get('workflow')
-    agreement_id = data.get('agreementId')
-    owner = data.get('owner')
-    nonce = data.get('nonce')
+    workflow = data.get("workflow")
+    agreement_id = data.get("agreementId")
+    owner = data.get("owner")
+    nonce = data.get("nonce")
     if not workflow:
-        return Response(json.dumps({"error":f'`workflow` is required in the payload and must '
-                       f'include workflow stages'}), 400, headers=standard_headers)
-    environment = data.get('environment')
+        return Response(
+            json.dumps(
+                {
+                    "error": f"`workflow` is required in the payload and must "
+                    f"include workflow stages"
+                }
+            ),
+            400,
+            headers=standard_headers,
+        )
+    environment = data.get("environment")
     if not check_environment_exists(environment):
-            logger.error(f'Environment invalid or does not exists')
-            return Response(json.dumps({"error":'Environment invalid or does not exists'}), 400, headers=standard_headers)
+        logger.error(f"Environment invalid or does not exists")
+        return Response(
+            json.dumps({"error": "Environment invalid or does not exists"}),
+            400,
+            headers=standard_headers,
+        )
     # verify provider's signature
-    msg, status, provider_address = process_signature_validation(data.get('providerSignature'), f"{owner}{nonce}")
+    msg, status, provider_address = process_signature_validation(
+        data.get("providerSignature"), f"{owner}{nonce}"
+    )
     if msg:
-        return Response(json.dumps({"error":msg}), status, headers=standard_headers)
+        return Response(json.dumps({"error": msg}), status, headers=standard_headers)
 
-    stages = workflow.get('stages')
+    stages = workflow.get("stages")
     if not stages:
-        logger.error(f'Missing stages')
-        return Response(json.dumps({"error":'Missing stages'}), 400, headers=standard_headers)
-    if len(stages)>1:
-        logger.error(f'Multiple stages are not supported yet')
-        return Response(json.dumps({"error":'Multiple stages are not supported yet'}), 400, headers=standard_headers)
-    for _attr in ('algorithm', 'compute', 'input', 'output'):
+        logger.error(f"Missing stages")
+        return Response(
+            json.dumps({"error": "Missing stages"}), 400, headers=standard_headers
+        )
+    if len(stages) > 1:
+        logger.error(f"Multiple stages are not supported yet")
+        return Response(
+            json.dumps({"error": "Multiple stages are not supported yet"}),
+            400,
+            headers=standard_headers,
+        )
+    for _attr in ("algorithm", "compute", "input", "output"):
         if _attr not in stages[0]:
-            logger.error(f'Missing {_attr} in stage 0')
-            return Response(json.dumps({"error":f'Missing {_attr} in stage 0'}), 400, headers=standard_headers)
+            logger.error(f"Missing {_attr} in stage 0")
+            return Response(
+                json.dumps({"error": f"Missing {_attr} in stage 0"}),
+                400,
+                headers=standard_headers,
+            )
     job_id = generate_new_id()
-    logger.debug(f'Got job_id: {job_id}')
+    logger.debug(f"Got job_id: {job_id}")
     body = create_compute_job(
         workflow, job_id, config.group, config.version, environment
     )
-    body['metadata']['secret'] = generate_new_id()
-    logger.debug(f'Got body: {body}')
-    create_sql_job(agreement_id, str(job_id), owner,body,environment, provider_address)
+    body["metadata"]["secret"] = generate_new_id()
+    logger.debug(f"Got body: {body}")
+    create_sql_job(
+        agreement_id, str(job_id), owner, body, environment, provider_address
+    )
     status_list = get_sql_status(agreement_id, str(job_id), owner)
     # Convert every value from the list of dicts to a string
     status_list = [{k: str(v) for k, v in d.items()} for d in status_list]
@@ -186,7 +212,7 @@ def start_compute_job():
     return Response(json.dumps(status_list), 200, headers=standard_headers)
 
 
-@services.route('/compute', methods=['PUT'])
+@services.route("/compute", methods=["PUT"])
 def stop_compute_job():
     """
     Stop the current compute job..
@@ -218,21 +244,21 @@ def stop_compute_job():
     """
     try:
         data = request.args if request.args else request.json
-        required_attributes = [
-          'owner',
-          'providerSignature',
-          'nonce'
-        ]
-        msg, status = check_required_attributes(required_attributes, data, 'PUT:/compute')
+        required_attributes = ["owner", "providerSignature", "nonce"]
+        msg, status = check_required_attributes(
+            required_attributes, data, "PUT:/compute"
+        )
         if msg:
-            return Response(json.dumps({"error":msg}), status, headers=standard_headers)
+            return Response(
+                json.dumps({"error": msg}), status, headers=standard_headers
+            )
         if data is None:
-          msg = f'You have to specify one of agreementId, jobId or owner'
-          return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
+            msg = f"You have to specify one of agreementId, jobId or owner"
+            return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
 
-        agreement_id = data.get('agreementId', None)
-        owner = data.get('owner', None)
-        job_id = data.get('jobId', None)
+        agreement_id = data.get("agreementId", None)
+        owner = data.get("owner", None)
+        job_id = data.get("jobId", None)
         if not agreement_id or len(agreement_id) < 2:
             agreement_id = None
 
@@ -242,37 +268,45 @@ def stop_compute_job():
         if not owner or len(owner) < 2:
             owner = None
         if owner is None and agreement_id is None and job_id is None:
-            msg = f'You have to specify one of agreementId, jobId or owner'
+            msg = f"You have to specify one of agreementId, jobId or owner"
             logger.error(msg)
-            return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
-        nonce = data.get('nonce')
+            return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
+        nonce = data.get("nonce")
         # verify provider's signature
         if job_id:
-          sign_message = f"{owner}{job_id}{nonce}"
+            sign_message = f"{owner}{job_id}{nonce}"
         else:
-          sign_message = f"{owner}{nonce}"
-        msg, status, provider_address = process_signature_validation(data.get('providerSignature'), sign_message)
+            sign_message = f"{owner}{nonce}"
+        msg, status, provider_address = process_signature_validation(
+            data.get("providerSignature"), sign_message
+        )
         if msg:
-            return Response(json.dumps({"error":msg}), status, headers=standard_headers)
+            return Response(
+                json.dumps({"error": msg}), status, headers=standard_headers
+            )
         jobs_list = get_sql_jobs(agreement_id, job_id, owner)
         for ajob in jobs_list:
             name = ajob
-            logger.info(f'Stopping job : {name}')
+            logger.info(f"Stopping job : {name}")
             stop_sql_job(name)
 
         status_list = get_sql_status(agreement_id, job_id, owner)
         return Response(json.dumps(status_list), 200, headers=standard_headers)
 
     except ApiException as e:
-        logger.error(f'Exception when stopping compute job: {e}')
-        return Response(json.dumps({"error":f'Error stopping job: {e}'}), 400, headers=standard_headers)
+        logger.error(f"Exception when stopping compute job: {e}")
+        return Response(
+            json.dumps({"error": f"Error stopping job: {e}"}),
+            400,
+            headers=standard_headers,
+        )
     except Exception as e:
-        msg = f'{e}'
+        msg = f"{e}"
         logger.error(msg)
-        return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
+        return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
 
 
-@services.route('/compute', methods=['DELETE'])
+@services.route("/compute", methods=["DELETE"])
 def delete_compute_job():
     """
     Deletes the current compute job.
@@ -299,11 +333,11 @@ def delete_compute_job():
         description: providerSignature
         type: string
     """
-    #since op-engine handles this, there is no need for this endpoint. Will just keep it here for backwards compat
+    # since op-engine handles this, there is no need for this endpoint. Will just keep it here for backwards compat
     return Response(json.dumps(""), 200, headers=standard_headers)
 
 
-@services.route('/compute', methods=['GET'])
+@services.route("/compute", methods=["GET"])
 def get_compute_job_status():
     """
     Get status for an specific or multiple jobs.
@@ -341,11 +375,11 @@ def get_compute_job_status():
     try:
         data = request.args if request.args else request.json
         if data is None:
-          msg = f'You have to specify one of agreementId, jobId or owner'
-          return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
-        agreement_id = data.get('agreementId', None)
-        owner = data.get('owner', None)
-        job_id = data.get('jobId', None)
+            msg = f"You have to specify one of agreementId, jobId or owner"
+            return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
+        agreement_id = data.get("agreementId", None)
+        owner = data.get("owner", None)
+        job_id = data.get("jobId", None)
 
         if not agreement_id or len(agreement_id) < 2:
             agreement_id = None
@@ -357,23 +391,24 @@ def get_compute_job_status():
             owner = None
 
         if owner is None and agreement_id is None and job_id is None:
-            msg = f'You have to specify one of agreementId, jobId or owner'
+            msg = f"You have to specify one of agreementId, jobId or owner"
             logger.error(msg)
-            return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
+            return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
         logger.debug(f"Got status request for {agreement_id}, {job_id}, {owner}")
         api_response = get_sql_status(agreement_id, job_id, owner)
         return Response(json.dumps(api_response), 200, headers=standard_headers)
 
     except ApiException as e:
-        msg = f'Error getting the status: {e}'
+        msg = f"Error getting the status: {e}"
         logger.error(msg)
-        return Response(json.dumps({"error":msg}), 400)
+        return Response(json.dumps({"error": msg}), 400)
     except Exception as e:
-        msg = f'{e}'
+        msg = f"{e}"
         logger.error(msg)
-        return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
+        return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
 
-@services.route('/runningjobs', methods=['GET'])
+
+@services.route("/runningjobs", methods=["GET"])
 def get_running_jobs():
     """
     Get running jobs
@@ -390,15 +425,16 @@ def get_running_jobs():
         api_response = get_sql_running_jobs()
         return Response(json.dumps(api_response), 200, headers=standard_headers)
     except ApiException as e:
-        msg = f'Error getting the status: {e}'
+        msg = f"Error getting the status: {e}"
         logger.error(msg)
-        return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
+        return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
     except Exception as e:
-        msg = f'{e}'
+        msg = f"{e}"
         logger.error(msg)
-        return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
+        return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
 
-@services.route('/getResult', methods=['GET'])
+
+@services.route("/getResult", methods=["GET"])
 def get_indexed_result():
     """
     Get one result from a compute job, based on the index.
@@ -436,24 +472,24 @@ def get_indexed_result():
         requests_session = get_requests_session()
         data = request.args if request.args else request.json
         if data is None:
-          msg = f'Both index & job_id are required'
-          return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
-        required_attributes = [
-          'owner',
-          'providerSignature',
-          'nonce',
-          'index',
-          'jobId'
-        ]
-        msg, status = check_required_attributes(required_attributes, data, 'GET:/getResult')
+            msg = f"Both index & job_id are required"
+            return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
+        required_attributes = ["owner", "providerSignature", "nonce", "index", "jobId"]
+        msg, status = check_required_attributes(
+            required_attributes, data, "GET:/getResult"
+        )
         if msg:
-            return Response(json.dumps({"error":msg}), status, headers=standard_headers)
-        index = data.get('index', None)
-        job_id = data.get('jobId', None)
-        owner = data.get('owner', None)
-        nonce = data.get('nonce', None)
+            return Response(
+                json.dumps({"error": msg}), status, headers=standard_headers
+            )
+        index = data.get("index", None)
+        job_id = data.get("jobId", None)
+        owner = data.get("owner", None)
+        nonce = data.get("nonce", None)
         # verify provider's signature
-        msg, status, provider_address = process_signature_validation(data.get('providerSignature'), f"{owner}{nonce}")
+        msg, status, provider_address = process_signature_validation(
+            data.get("providerSignature"), f"{owner}{nonce}"
+        )
 
         index = int(index)
         outputs, owner = get_sql_job_urls(job_id)
@@ -461,28 +497,29 @@ def get_indexed_result():
         logger.info(f"Got {owner}")
         logger.info(f"Got {outputs}")
         if outputs is None or not isinstance(outputs, list):
-          msg = f'No results for job {job_id}'
-          return Response(json.dumps({"error":msg}), 404, headers=standard_headers)
+            msg = f"No results for job {job_id}"
+            return Response(json.dumps({"error": msg}), 404, headers=standard_headers)
         # check the index
         logger.info(f"Len outputs {len(outputs)}, index: {index}")
         if int(index) >= len(outputs):
-          msg = f'No such index {index} in this compute job'
-          return Response(json.dumps({"error":msg}), 404, headers=standard_headers)
+            msg = f"No such index {index} in this compute job"
+            return Response(json.dumps({"error": msg}), 404, headers=standard_headers)
         logger.info(f"Trying: {outputs[index]['url']}")
         return build_download_response(
-            request, requests_session, outputs[index]['url'], None
+            request, requests_session, outputs[index]["url"], None
         )
 
     except ApiException as e:
-        msg = f'Error getting the status: {e}'
+        msg = f"Error getting the status: {e}"
         logger.error(msg)
-        return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
+        return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
     except Exception as e:
-        msg = f'{e}'
+        msg = f"{e}"
         logger.error(msg)
-        return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
+        return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
 
-@services.route('/environments', methods=['GET'])
+
+@services.route("/environments", methods=["GET"])
 def get_environments():
     """
     Get environments
@@ -499,9 +536,10 @@ def get_environments():
         api_response = get_sql_environments(logger)
         return Response(json.dumps(api_response), 200, headers=standard_headers)
     except Exception as e:
-        msg = f'{e}'
+        msg = f"{e}"
         logger.error(msg)
-        return Response(json.dumps({"error":msg}), 400, headers=standard_headers)
+        return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
+
 
 def get_requests_session() -> Session:
     """

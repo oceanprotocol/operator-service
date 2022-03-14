@@ -13,8 +13,8 @@ from flask import Response, request
 
 from operator_service.exceptions import InvalidSignatureError
 
-logging.basicConfig(format='%(asctime)s %(message)s')
-logger = logging.getLogger('operator-service')
+logging.basicConfig(format="%(asctime)s %(message)s")
+logger = logging.getLogger("operator-service")
 logger.setLevel(logging.DEBUG)
 
 
@@ -28,27 +28,29 @@ def generate_new_id():
 
 def create_compute_job(workflow, execution_id, group, version, namespace):
     execution = dict()
-    execution['apiVersion'] = group + '/' + version
-    execution['kind'] = 'WorkFlow'
-    execution['metadata'] = dict()
-    execution['metadata']['name'] = execution_id
-    execution['metadata']['namespace'] = namespace
-    execution['metadata']['labels'] = dict()
-    execution['metadata']['labels']['workflow'] = execution_id
-    execution['spec'] = dict()
-    execution['spec']['metadata'] = workflow
+    execution["apiVersion"] = group + "/" + version
+    execution["kind"] = "WorkFlow"
+    execution["metadata"] = dict()
+    execution["metadata"]["name"] = execution_id
+    execution["metadata"]["namespace"] = namespace
+    execution["metadata"]["labels"] = dict()
+    execution["metadata"]["labels"]["workflow"] = execution_id
+    execution["spec"] = dict()
+    execution["spec"]["metadata"] = workflow
     return execution
 
 
 def check_required_attributes(required_attributes, data, method):
-    logger.info('got %s request: %s' % (method, data))
+    logger.info("got %s request: %s" % (method, data))
     if not data or not isinstance(data, dict):
-        logger.error('%s request failed: data is empty.' % method)
-        return 'payload seems empty.', 400
+        logger.error("%s request failed: data is empty." % method)
+        return "payload seems empty.", 400
 
     for attr in required_attributes:
         if attr not in data:
-            logger.error('%s request failed: required attr %s missing.' % (method, attr))
+            logger.error(
+                "%s request failed: required attr %s missing." % (method, attr)
+            )
             return '"%s" is required in the call to %s' % (attr, method), 400
 
     return None, None
@@ -56,58 +58,64 @@ def check_required_attributes(required_attributes, data, method):
 
 def process_signature_validation(signature, original_msg):
     if not signature or not original_msg:
-            return f'`providerSignature` of agreementId is required.', 400, None
+        return f"`providerSignature` of agreementId is required.", 400, None
     try:
         address = Account.recover_message(
             encode_defunct(text=original_msg), signature=signature
         )
     except Exception as e:
-        return 'Failed to recover address', 400, None
+        return "Failed to recover address", 400, None
     if is_verify_signature_required():
         # verify provider's signature
         allowed_providers = get_list_of_allowed_providers()
         if address.lower() not in allowed_providers:
-            msg = f'Invalid signature {signature} of documentId {original_msg},' \
-            f'the signing ethereum account {address} is not authorized to use this service.'
+            msg = (
+                f"Invalid signature {signature} of documentId {original_msg},"
+                f"the signing ethereum account {address} is not authorized to use this service."
+            )
             return msg, 401, None
-    
-    return '', None, address
+
+    return "", None, address
 
 
 def get_list_of_allowed_providers():
     try:
         config_allowed_list = json.loads(os.getenv("ALLOWED_PROVIDERS"))
         if not isinstance(config_allowed_list, list):
-            logger.error('Failed loading ALLOWED_PROVIDERS')
+            logger.error("Failed loading ALLOWED_PROVIDERS")
             return []
         return config_allowed_list
     except ApiException as e:
-        logging.error(f'Exception when calling json.loads(os.getenv("ALLOWED_PROVIDERS")): {e}')
+        logging.error(
+            f'Exception when calling json.loads(os.getenv("ALLOWED_PROVIDERS")): {e}'
+        )
         return []
 
 
 def is_verify_signature_required():
     try:
-        return bool(int(os.environ.get('SIGNATURE_REQUIRED', 0)) == 1)
+        return bool(int(os.environ.get("SIGNATURE_REQUIRED", 0)) == 1)
     except ValueError:
         return False
 
 
 def get_compute_resources():
     resources = dict()
-    resources['inputVolumesize'] = os.environ.get('inputVolumesize', "1Gi")
-    resources['outputVolumesize'] = os.environ.get('outputVolumesize', "1Gi")
-    resources['adminlogsVolumesize'] = os.environ.get('adminlogsVolumesize', "1Gi")
-    resources['requests_cpu'] = os.environ.get('requests_cpu', "200m")
-    resources['requests_memory'] = os.environ.get('requests_memory', "100Mi")
-    resources['limits_cpu'] = os.environ.get('limits_cpu', "1")
-    resources['limits_memory'] = os.environ.get('limits_memory', "500Mi")
+    resources["inputVolumesize"] = os.environ.get("inputVolumesize", "1Gi")
+    resources["outputVolumesize"] = os.environ.get("outputVolumesize", "1Gi")
+    resources["adminlogsVolumesize"] = os.environ.get("adminlogsVolumesize", "1Gi")
+    resources["requests_cpu"] = os.environ.get("requests_cpu", "200m")
+    resources["requests_memory"] = os.environ.get("requests_memory", "100Mi")
+    resources["limits_cpu"] = os.environ.get("limits_cpu", "1")
+    resources["limits_memory"] = os.environ.get("limits_memory", "500Mi")
     return resources
+
 
 def get_namespace_configs():
     resources = dict()
-    resources['namespace'] = os.environ.get('DEFAULT_NAMESPACE', "ocean-compute")
+    resources["namespace"] = os.environ.get("DEFAULT_NAMESPACE", "ocean-compute")
     return resources
+
 
 def build_download_response(request, requests_session, url, content_type=None):
     try:
@@ -119,13 +127,13 @@ def build_download_response(request, requests_session, url, content_type=None):
             download_request_headers = {"Range": request.headers.get("range")}
             download_response_headers = download_request_headers
         # IPFS utils
-        ipfs_x_api_key = getenv('X-API-KEY',None)
+        ipfs_x_api_key = getenv("X-API-KEY", None)
         if ipfs_x_api_key:
-            download_request_headers['X-API-KEY'] = ipfs_x_api_key
-        ipfs_client_id = getenv('CLIENT-ID',None)
+            download_request_headers["X-API-KEY"] = ipfs_x_api_key
+        ipfs_client_id = getenv("CLIENT-ID", None)
         if ipfs_client_id:
-            download_request_headers['CLIENT-ID'] = ipfs_client_id
-             
+            download_request_headers["CLIENT-ID"] = ipfs_client_id
+
         response = requests_session.get(
             url, headers=download_request_headers, stream=True, timeout=3
         )
