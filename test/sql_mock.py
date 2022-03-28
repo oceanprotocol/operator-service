@@ -1,5 +1,5 @@
-MOCK_JOB_STATUS = {'value': 'test'}
-MOCK_JOBS_LIST = ['job1', 'job2']
+MOCK_JOB_STATUS = {"value": "test"}
+MOCK_JOBS_LIST = ["job1", "job2"]
 
 
 class SQLMock:

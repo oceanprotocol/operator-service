@@ -166,8 +166,8 @@ def get_sql_environments(logger):
         return result
     for row in rows:
         temprow = json.loads(row[1])
-        temprow['lastSeen'] = str(row[2])
-        temprow['id'] = row[0]
+        temprow["lastSeen"] = str(row[2])
+        temprow["id"] = row[0]
         result.append(temprow)
     return result
 
