@@ -396,6 +396,8 @@ def get_compute_job_status():
             return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
         logger.debug(f"Got status request for {agreement_id}, {job_id}, {owner}")
         api_response = get_sql_status(agreement_id, job_id, owner)
+        api_response = [{k: str(v) for k, v in d.items()} for d in api_response]
+
         return Response(json.dumps(api_response), 200, headers=standard_headers)
 
     except ApiException as e:
