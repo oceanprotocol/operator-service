@@ -1,4 +1,3 @@
-
 def test_init_pgsqlexecution():
     return
 

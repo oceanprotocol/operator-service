@@ -23,13 +23,19 @@ class KubeAPIMock:
         pass
 
     def create_namespaced_custom_object(self, body):
-        processed_workflow = deepcopy(VALID_COMPUTE_BODY['workflow'])
-        stage_compute = processed_workflow['stages'][0]['compute']
-        stage_compute['resources'] = get_compute_resources()
+        processed_workflow = deepcopy(VALID_COMPUTE_BODY["workflow"])
+        stage_compute = processed_workflow["stages"][0]["compute"]
+        stage_compute["resources"] = get_compute_resources()
         if KubeAPIMock.expected_maxtime:
-            stage_compute['maxtime'] = KubeAPIMock.expected_maxtime
+            stage_compute["maxtime"] = KubeAPIMock.expected_maxtime
         config = Config()
-        correct_body = create_compute_job(processed_workflow, FAKE_UUID, config.group, config.version, config.namespace)
+        correct_body = create_compute_job(
+            processed_workflow,
+            FAKE_UUID,
+            config.group,
+            config.version,
+            config.namespace,
+        )
         assert body == correct_body
 
     def delete_namespaced_custom_object(self, name, body, **_):
