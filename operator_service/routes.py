@@ -23,7 +23,7 @@ from operator_service.kubernetes_api import KubeAPI
 from operator_service.utils import (
     create_compute_job,
     check_required_attributes,
-    decimals_to_float,
+    sanitize_response_for_provider,
     generate_new_id,
     process_signature_validation,
     get_compute_resources,
@@ -209,7 +209,9 @@ def start_compute_job():
     status_list = get_sql_status(agreement_id, str(job_id), owner)
 
     return Response(
-        json.dumps(decimals_to_float(status_list)), 200, headers=standard_headers
+        json.dumps(sanitize_response_for_provider(status_list)),
+        200,
+        headers=standard_headers,
     )
 
 
@@ -399,7 +401,9 @@ def get_compute_job_status():
         api_response = get_sql_status(agreement_id, job_id, owner)
 
         return Response(
-            json.dumps(decimals_to_float(api_response)), 200, headers=standard_headers
+            json.dumps(sanitize_response_for_provider(api_response)),
+            200,
+            headers=standard_headers,
         )
 
     except ApiException as e:
