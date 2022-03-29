@@ -1,4 +1,3 @@
-from decimal import Decimal
 import os
 from os import path
 import logging
