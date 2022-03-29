@@ -183,17 +183,22 @@ def build_download_response(request, requests_session, url, content_type=None):
         raise
 
 
-def decimals_to_float(d):
+def sanitize_response_for_provider(d):
     """
-    Recursively convert Decimal to float
+    Sanitize objects to send them to provider by recursively convert Decimal and float values to string
     in: dict | list | tuple | set | str | int | float | None
     out: dict | list | tuple | set | str | int | float | None
     """
     if isinstance(d, Decimal):
-        return float(d)
+        return str(d)
+    elif isinstance(d, float):
+        return str(d)
     elif isinstance(d, dict):
-        return {decimals_to_float(k): decimals_to_float(v) for k, v in d.items()}
+        return {
+            sanitize_response_for_provider(k): sanitize_response_for_provider(v)
+            for k, v in d.items()
+        }
     elif isinstance(d, list):
-        return [decimals_to_float(element) for element in d]
+        return [sanitize_response_for_provider(element) for element in d]
     else:
         return d
