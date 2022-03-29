@@ -1,3 +1,4 @@
+from decimal import Decimal
 import json
 import os
 import uuid
@@ -180,3 +181,19 @@ def build_download_response(request, requests_session, url, content_type=None):
     except Exception as e:
         logger.error(f"Error preparing file download response: {str(e)}")
         raise
+
+
+def decimals_to_float(d):
+    """
+    Recursively convert Decimal to float
+    in: dict | list | tuple | set | str | int | float | None
+    out: dict | list | tuple | set | str | int | float | None
+    """
+    if isinstance(d, Decimal):
+        return float(d)
+    elif isinstance(d, dict):
+        return {decimals_to_float(k): decimals_to_float(v) for k, v in d.items()}
+    elif isinstance(d, list):
+        return [decimals_to_float(element) for element in d]
+    else:
+        return d
