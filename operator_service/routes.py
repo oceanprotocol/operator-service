@@ -73,6 +73,7 @@ def start_compute_job():
                         "providerSignature":"0xc3e6de65bfa3527409d8df6232e084e3cea0bae3bc85f7401e98fac56f9706157e42089b4b2b45f0f019bc94e7e4806afe8c86a6bab9c616d5010891e0246e761c",
                         "environment":"ocean-compute",
                         "nonce": 1234,
+                        "chainId": "1",
                         "workflow":{
                             "stages": [
                               {
@@ -162,7 +163,7 @@ def start_compute_job():
             headers=standard_headers,
         )
     environment = data.get("environment")
-    if not check_environment_exists(environment):
+    if not check_environment_exists(environment, workflow["chainId"]):
         logger.error(f"Environment invalid or does not exists")
         return Response(
             json.dumps({"error": "Environment invalid or does not exists"}),
