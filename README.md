@@ -22,8 +22,8 @@ Table of Contents
 
 ## About
 
-The Operator Service is a micro-service implementing part of the Ocean Protocol 
-[Compute to the Data OEP-12](https://github.com/oceanprotocol/OEPs/tree/master/12#infrastructure-orchestration), 
+The Operator Service is a micro-service implementing part of the Ocean Protocol
+[Compute to the Data OEP-12](https://github.com/oceanprotocol/OEPs/tree/master/12#infrastructure-orchestration),
 in charge of managing the workflow executing requests.
 Typically the Operator Service is integrated from the [Brizo proxy](https://github.com/oceanprotocol/brizo),
 but can be called independently if it.
@@ -41,11 +41,11 @@ The Operator Service doesn't provide any storage capability, all the state is st
 
 ### Local Environment
 
-The operator service is in charge of receiving the requests for running compute workflows and the 
+The operator service is in charge of receiving the requests for running compute workflows and the
 setup of those in the K8s infrastructure.
 To do that, in a local environment the operator service needs connectivity to you K8s environment.
 
-There are multiple configurations and deployments of K8s possible, but here we are going to show 
+There are multiple configurations and deployments of K8s possible, but here we are going to show
 how to connect to an existing K8s cluster running in Amazon Web Services (AWS).
 
 #### Installing AWS & K8s tools
@@ -64,7 +64,7 @@ You need to install the `aws-iam-authenticator`
 
 ```
 $ curl -o aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/aws-iam-authenticator
-chmod +x ./aws-iam-authenticator 
+chmod +x ./aws-iam-authenticator
 ```
 And later the Kubectl tool:
 
@@ -123,6 +123,7 @@ $ curl -X GET "http://localhost:8050/api/v1/operator/list" -H "accept: applicati
      DEFAULT_NAMESPACE = namespace which will run the jobs
      X-API-KEY = if defined, when downloading a compute output, will add X-API-KEY header (used for IPFS auth)
      CLIENT-ID = if defined, when downloading a compute output, will add CLIENT-ID header (used for IPFS auth)
+     LOG_CFG and LOG_LEVEL = define the location of the log file and logging level, respectively
 
 ### Testing
 
