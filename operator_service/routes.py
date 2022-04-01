@@ -33,9 +33,7 @@ from operator_service.utils import (
 from requests.adapters import HTTPAdapter
 from requests.sessions import Session
 
-logging.basicConfig(format="%(asctime)s %(message)s")
-logger = logging.getLogger("operator-service")
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 services = Blueprint("services", __name__)
 
@@ -197,7 +195,7 @@ def start_compute_job():
                 headers=standard_headers,
             )
     job_id = generate_new_id()
-    logger.debug(f"Got job_id: {job_id}")
+    logger.info(f"Got job_id: {job_id}")
     body = create_compute_job(
         workflow, job_id, config.group, config.version, environment
     )
@@ -397,7 +395,7 @@ def get_compute_job_status():
             msg = f"You have to specify one of agreementId, jobId or owner"
             logger.error(msg)
             return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
-        logger.debug(f"Got status request for {agreement_id}, {job_id}, {owner}")
+        logger.info(f"Got status request for {agreement_id}, {job_id}, {owner}")
         api_response = get_sql_status(agreement_id, job_id, owner)
 
         return Response(

@@ -5,6 +5,9 @@ import os
 
 from flask import Flask
 from flask_cors import CORS
+from operator_service.log import setup_logging
+
+setup_logging()
 
 app = Flask(__name__)
 CORS(app)

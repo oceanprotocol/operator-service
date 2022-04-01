@@ -14,9 +14,7 @@ from flask import Response, request
 
 from operator_service.exceptions import InvalidSignatureError
 
-logging.basicConfig(format="%(asctime)s %(message)s")
-logger = logging.getLogger("operator-service")
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 def generate_new_id():
@@ -42,7 +40,7 @@ def create_compute_job(workflow, execution_id, group, version, namespace):
 
 
 def check_required_attributes(required_attributes, data, method):
-    logger.info("got %s request: %s" % (method, data))
+    logger.debug("got %s request: %s" % (method, data))
     if not data or not isinstance(data, dict):
         logger.error("%s request failed: data is empty." % method)
         return "payload seems empty.", 400
