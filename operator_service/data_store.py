@@ -182,7 +182,7 @@ def get_sql_environments(logger, chain_id):
     return result
 
 
-def check_environment_exists(environment,chain_id):
+def check_environment_exists(environment, chain_id):
     params = dict()
     select_query = """
     SELECT namespace, status,extract(epoch from lastping) as lastping from envs WHERE namespace=%(env)s
@@ -193,12 +193,12 @@ def check_environment_exists(environment,chain_id):
     )
     if not rows:
         return False
-    status=json.loads(row[0][1])
+    status = json.loads(row[0][1])
     if "allowedChainId" in status:
-            if isinstance(status["allowedChainId"], list):
-                if len(status["allowedChainId"]):
-                    if not (chain_id in status["allowedChainId"]):
-                        return False
+        if isinstance(status["allowedChainId"], list):
+            if len(status["allowedChainId"]):
+                if not (chain_id in status["allowedChainId"]):
+                    return False
     return True
 
 
