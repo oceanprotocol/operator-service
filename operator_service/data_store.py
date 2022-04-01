@@ -193,7 +193,7 @@ def check_environment_exists(environment, chain_id):
     )
     if not rows:
         return False
-    status = json.loads(row[0][1])
+    status = json.loads(rows[0][1])
     if "allowedChainId" in status:
         if isinstance(status["allowedChainId"], list):
             if len(status["allowedChainId"]):
