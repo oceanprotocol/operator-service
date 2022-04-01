@@ -149,6 +149,7 @@ def start_compute_job():
     agreement_id = data.get("agreementId")
     owner = data.get("owner")
     nonce = data.get("nonce")
+    workflow["chainId"] = data.get("chainId")
     if not workflow:
         return Response(
             json.dumps(
@@ -383,6 +384,7 @@ def get_compute_job_status():
         agreement_id = data.get("agreementId", None)
         owner = data.get("owner", None)
         job_id = data.get("jobId", None)
+        chain_id = data.get("chainId", None)
 
         if not agreement_id or len(agreement_id) < 2:
             agreement_id = None
@@ -398,7 +400,7 @@ def get_compute_job_status():
             logger.error(msg)
             return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
         logger.debug(f"Got status request for {agreement_id}, {job_id}, {owner}")
-        api_response = get_sql_status(agreement_id, job_id, owner)
+        api_response = get_sql_status(agreement_id, job_id, owner, chain_id)
 
         return Response(
             json.dumps(sanitize_response_for_provider(api_response)),
@@ -541,7 +543,8 @@ def get_environments():
         description: Get correctly the status
     """
     try:
-        api_response = get_sql_environments(logger)
+        data = request.args if request.args else request.json
+        api_response = get_sql_environments(logger, data.get("chainId"))
         return Response(json.dumps(api_response), 200, headers=standard_headers)
     except Exception as e:
         msg = f"{e}"
