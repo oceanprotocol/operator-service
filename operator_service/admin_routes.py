@@ -13,8 +13,7 @@ admin_services = Blueprint("admin_services", __name__)
 
 
 config = Config()
-logger = logging.getLogger("ocean-operator")
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 @adminpg_services.route("/pgsqlinit", methods=["POST"])
@@ -40,7 +39,7 @@ def init_pgsql_compute():
         )
         cursor = connection.cursor()
         create_table_query = """
-            CREATE TABLE IF NOT EXISTS jobs 
+            CREATE TABLE IF NOT EXISTS jobs
                 (agreementId           varchar(255) NOT NULL,
                 workflowId         varchar(255) NOT NULL,
                 owner         varchar(255),
@@ -59,18 +58,18 @@ def init_pgsql_compute():
                 removed smallint default 0,
                 workflow text,
                 provider varchar(255)
-            ); 
+            );
         """
         cursor.execute(create_table_query)
         create_index_query = """CREATE unique INDEX IF NOT EXISTS uniq_agreementId_workflowId ON jobs (agreementId,workflowId)"""
         cursor.execute(create_index_query)
         # create envs tabls
         create_table_query = """
-            CREATE TABLE IF NOT EXISTS envs 
+            CREATE TABLE IF NOT EXISTS envs
                 (namespace           varchar(255) NOT NULL,
                 status         text,
                 lastping timestamp without time zone default NOW()
-            ); 
+            );
         """
         cursor.execute(create_table_query)
         create_index_query = (
