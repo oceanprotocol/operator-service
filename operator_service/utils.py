@@ -10,11 +10,14 @@ from os import getenv
 from kubernetes.client.rest import ApiException
 from eth_account.account import Account
 from eth_account.messages import encode_defunct
+from eth_keys import KeyAPI
+from eth_keys.backends import NativeECCBackend
 from flask import Response, request
-
 from operator_service.exceptions import InvalidSignatureError
+from web3 import Web3
 
 logger = logging.getLogger(__name__)
+keys = KeyAPI(NativeECCBackend)
 
 
 def generate_new_id():
@@ -55,13 +58,45 @@ def check_required_attributes(required_attributes, data, method):
     return None, None
 
 
-def process_signature_validation(signature, original_msg):
+def get_signer(signature, message):
+    """
+    :return: True if signature is valid
+    """
+    # db_nonce = get_nonce(signer_address)
+    # if db_nonce and float(nonce) < float(db_nonce):
+    #    msg = (
+    #        f"Invalid signature expected nonce ({db_nonce}) > current nonce ({nonce})."
+    #    )
+    #    logger.error(msg)
+    #    raise InvalidSignatureError(msg)
+
+    # address = Account.recover_message(encode_defunct(text=message), signature=signature)
+    signature_bytes = Web3.toBytes(hexstr=signature)
+    if signature_bytes[64] == 27:
+        new_signature = b"".join([signature_bytes[0:64], b"\x00"])
+    elif signature_bytes[64] == 28:
+        new_signature = b"".join([signature_bytes[0:64], b"\x01"])
+    else:
+        new_signature = signature_bytes
+    signature = keys.Signature(signature_bytes=new_signature)
+    message_hash = Web3.solidityKeccak(
+        ["bytes"],
+        [Web3.toHex(Web3.toBytes(text=message))],
+    )
+    prefix = "\x19Ethereum Signed Message:\n32"
+    signable_hash = Web3.solidityKeccak(
+        ["bytes", "bytes"], [Web3.toBytes(text=prefix), Web3.toBytes(message_hash)]
+    )
+    vkey = keys.ecdsa_recover(signable_hash, signature)
+    return vkey.to_address()
+
+
+def process_provider_signature_validation(signature, original_msg, nonce):
     if not signature or not original_msg:
         return f"`providerSignature` of agreementId is required.", 400, None
+    original_msg = f"{original_msg}{nonce}"
     try:
-        address = Account.recover_message(
-            encode_defunct(text=original_msg), signature=signature
-        )
+        address = get_signer(signature, original_msg)
     except Exception as e:
         return "Failed to recover address", 400, None
     if is_verify_signature_required():

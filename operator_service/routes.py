@@ -25,7 +25,7 @@ from operator_service.utils import (
     check_required_attributes,
     sanitize_response_for_provider,
     generate_new_id,
-    process_signature_validation,
+    process_provider_signature_validation,
     get_compute_resources,
     get_namespace_configs,
     build_download_response,
@@ -167,8 +167,8 @@ def start_compute_job():
             headers=standard_headers,
         )
     # verify provider's signature
-    msg, status, provider_address = process_signature_validation(
-        data.get("providerSignature"), f"{owner}{nonce}"
+    msg, status, provider_address = process_provider_signature_validation(
+        data.get("providerSignature"), f"{owner}", nonce
     )
     if msg:
         return Response(json.dumps({"error": msg}), status, headers=standard_headers)
@@ -275,11 +275,11 @@ def stop_compute_job():
         nonce = data.get("nonce")
         # verify provider's signature
         if job_id:
-            sign_message = f"{owner}{job_id}{nonce}"
+            sign_message = f"{owner}{job_id}"
         else:
-            sign_message = f"{owner}{nonce}"
-        msg, status, provider_address = process_signature_validation(
-            data.get("providerSignature"), sign_message
+            sign_message = f"{owner}"
+        msg, status, provider_address = process_provider_signature_validation(
+            data.get("providerSignature"), sign_message, nonce
         )
         if msg:
             return Response(
@@ -395,6 +395,20 @@ def get_compute_job_status():
             msg = f"You have to specify one of agreementId, jobId or owner"
             logger.error(msg)
             return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
+
+        nonce = data.get("nonce", None)
+        # verify provider's signature
+        if job_id:
+            sign_message = f"{owner}{job_id}"
+        else:
+            sign_message = f"{owner}"
+        msg, status, provider_address = process_provider_signature_validation(
+            data.get("providerSignature"), sign_message, nonce
+        )
+        if msg:
+            return Response(
+                json.dumps({"error": msg}), status, headers=standard_headers
+            )
         logger.info(f"Got status request for {agreement_id}, {job_id}, {owner}")
         api_response = get_sql_status(agreement_id, job_id, owner)
 
@@ -493,10 +507,13 @@ def get_indexed_result():
         owner = data.get("owner", None)
         nonce = data.get("nonce", None)
         # verify provider's signature
-        msg, status, provider_address = process_signature_validation(
-            data.get("providerSignature"), f"{owner}{nonce}"
+        msg, status, provider_address = process_provider_signature_validation(
+            data.get("providerSignature"), f"{owner}{job_id}", nonce
         )
-
+        if msg:
+            return Response(
+                json.dumps({"error": msg}), status, headers=standard_headers
+            )
         index = int(index)
         outputs, owner = get_sql_job_urls(job_id)
         # TO DO - check owner here & provider
