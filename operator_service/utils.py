@@ -60,17 +60,9 @@ def check_required_attributes(required_attributes, data, method):
 
 def get_signer(signature, message):
     """
-    :return: True if signature is valid
+    Returns signer of a message.
     """
-    # db_nonce = get_nonce(signer_address)
-    # if db_nonce and float(nonce) < float(db_nonce):
-    #    msg = (
-    #        f"Invalid signature expected nonce ({db_nonce}) > current nonce ({nonce})."
-    #    )
-    #    logger.error(msg)
-    #    raise InvalidSignatureError(msg)
-
-    # address = Account.recover_message(encode_defunct(text=message), signature=signature)
+    
     signature_bytes = Web3.toBytes(hexstr=signature)
     if signature_bytes[64] == 27:
         new_signature = b"".join([signature_bytes[0:64], b"\x00"])
@@ -81,7 +73,7 @@ def get_signer(signature, message):
     signature = keys.Signature(signature_bytes=new_signature)
     message_hash = Web3.solidityKeccak(
         ["bytes"],
-        [Web3.toHex(Web3.toBytes(text=message))],
+        [Web3.toBytes(text=message)],
     )
     prefix = "\x19Ethereum Signed Message:\n32"
     signable_hash = Web3.solidityKeccak(
