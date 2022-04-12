@@ -62,7 +62,7 @@ def get_signer(signature, message):
     """
     Returns signer of a message.
     """
-    
+
     signature_bytes = Web3.toBytes(hexstr=signature)
     if signature_bytes[64] == 27:
         new_signature = b"".join([signature_bytes[0:64], b"\x00"])
