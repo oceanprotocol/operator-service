@@ -8,8 +8,6 @@ from cgi import parse_header
 from os import getenv
 
 from kubernetes.client.rest import ApiException
-from eth_account.account import Account
-from eth_account.messages import encode_defunct
 from eth_keys import KeyAPI
 from eth_keys.backends import NativeECCBackend
 from flask import Response, request
