@@ -83,7 +83,7 @@ jobs:
         run: |
           for i in $(seq 1 250); do
             sleep 5
-            if [RUNNING=$(docker inspect --format="{{.State.Running}}" docker-registry)] then
+            if [RUNNING=$(docker inspect --format="{{.State.Running}}" docker-registry)]; then
               break
             fi
             done
