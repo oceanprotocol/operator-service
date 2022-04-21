@@ -83,7 +83,9 @@ jobs:
         run:
           for i in $(seq 1 250); do
             RUNNING=$(docker inspect --format="{{.State.Running}}" docker-registry)
-            if [ "$RUNNING" == "true" ]; then break; fi
+            if [ "$RUNNING" == "true" ]; then
+              break
+            fi
             done
       - name:  Push local docker images
         run: |
