@@ -14,8 +14,9 @@ with open("CHANGELOG.md") as history_file:
     history = history_file.read()
 
 install_requirements = [
+    "web3==5.25.0",
     "eth_account",
-    "coloredlogs==10.0",
+    "coloredlogs==15.0.1",
     "Flask==1.0.2",
     "Flask-Cors==3.0.6",
     "flask-swagger==0.2.14",
