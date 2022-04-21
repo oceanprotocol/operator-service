@@ -78,7 +78,7 @@ jobs:
           OPERATOR_SERVICE_VERSION: 172.15.0.11:5000/operator-service:test
           OPERATOR_ENGINE_VERSION: 172.15.0.11:5000/operator-engine:test
           POD_CONFIGURATION_VERSION: 172.15.0.11:5000/pod-configuration:test
-          POD_CONFIGURATION_VERSION: 172.15.0.11:5000/pod-publishing:test
+          POD_PUBLISHING_VERSION: 172.15.0.11:5000/pod-publishing:test
       - name:  Push local docker images
         run: |
           docker push 172.15.0.11:5000/operator-service:test
