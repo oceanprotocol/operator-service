@@ -87,6 +87,7 @@ jobs:
               break
             fi
             done
+            sleep 3
       - name:  Push local docker images
         run: |
           docker push 172.15.0.11:5000/operator-service:test
