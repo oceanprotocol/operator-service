@@ -79,6 +79,7 @@ jobs:
           OPERATOR_ENGINE_VERSION: 172.15.0.11:5000/operator-engine:test
           POD_CONFIGURATION_VERSION: 172.15.0.11:5000/pod-configuration:test
           POD_PUBLISHING_VERSION: 172.15.0.11:5000/pod-publishing:test
+          WAIT_FOR_C2DIMAGES: "yeah"
       - name: Wait for registry
         run: |
           for i in $(seq 1 250); do
@@ -91,9 +92,10 @@ jobs:
       - name:  Push local docker images
         run: |
           docker push 172.15.0.11:5000/operator-service:test
-          docker push  172.15.0.11:5000/operator-engine:test
-          docker push  172.15.0.11:5000/pod-configuration:test
-          docker push  172.15.0.11:5000/pod-publishing:test
+          docker push 172.15.0.11:5000/operator-engine:test
+          docker push 172.15.0.11:5000/pod-configuration:test
+          docker push 172.15.0.11:5000/pod-publishing:test
+          touch $HOME/.ocean/ocean-c2d/imagesready
       - name: Wait for contracts deployment and C2D cluster to be ready
         working-directory: ${{ github.workspace }}/barge
         run: |
