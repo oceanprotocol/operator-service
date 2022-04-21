@@ -82,9 +82,12 @@ jobs:
       - name: Wait for registry
         run: |
           for i in $(seq 1 250); do
-              RUNNING=$(docker inspect --format="{{.State.Running}}" docker-registry)
-              [ "$RUNNING" == "true" ] && break
-          done
+            sleep 5
+            RUNNING=$(docker inspect --format="{{.State.Running}}" docker-registry)
+            if [ "$RUNNING" == "true" ]; then
+              break
+            fi
+            done
       - name:  Push local docker images
         run: |
           docker push 172.15.0.11:5000/operator-service:test
