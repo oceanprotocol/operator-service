@@ -180,8 +180,13 @@ def update_nonce_for_a_certain_provider(nonce: str, provider_address: str):
         rows = _execute_query(select_query, params, "get_provider", get_rows=True)
         if not rows:
             # creates a new row if necessary
-            postgres_insert_query = """INSERT INTO nonces (provider, nonce) VALUES (%s, %s)"""
-            record_to_insert = (provider_address, nonce,)
+            postgres_insert_query = (
+                """INSERT INTO nonces (provider, nonce) VALUES (%s, %s)"""
+            )
+            record_to_insert = (
+                provider_address,
+                nonce,
+            )
 
             try:
                 _execute_query(postgres_insert_query, record_to_insert, "create_nonce")
@@ -195,7 +200,10 @@ def update_nonce_for_a_certain_provider(nonce: str, provider_address: str):
         return
 
     postgres_insert_query = """UPDATE nonces SET nonce=%s WHERE provider=%s"""
-    record_to_insert = (nonce, provider_address,)
+    record_to_insert = (
+        nonce,
+        provider_address,
+    )
 
     return _execute_query(postgres_insert_query, record_to_insert, "update_nonce")
 

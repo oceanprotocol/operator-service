@@ -12,7 +12,10 @@ from eth_keys import KeyAPI
 from eth_keys.backends import NativeECCBackend
 from flask import Response, request
 
-from operator_service.data_store import get_nonce_for_certain_provider, update_nonce_for_a_certain_provider
+from operator_service.data_store import (
+    get_nonce_for_certain_provider,
+    update_nonce_for_a_certain_provider,
+)
 from operator_service.exceptions import InvalidSignatureError
 from web3 import Web3
 
