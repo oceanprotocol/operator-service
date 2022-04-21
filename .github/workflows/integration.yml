@@ -48,7 +48,7 @@ jobs:
           ls -l ./
           sudo mkdir /etc/docker/certs.d
           sudo mkdir /etc/docker/certs.d/172.15.0.11:5000
-          sudo cp ./certs/registry.crt /etc/docker/certs.d/172.15.0.11:5000/ca.crt
+          sudo cp ./certs/registry/registry.crt /etc/docker/certs.d/172.15.0.11:5000/ca.crt
 
       - name: Build local Docker for operator-service
         run: docker build -t '172.15.0.11:5000/operator-service:test' .
