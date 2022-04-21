@@ -79,6 +79,12 @@ jobs:
           OPERATOR_ENGINE_VERSION: 172.15.0.11:5000/operator-engine:test
           POD_CONFIGURATION_VERSION: 172.15.0.11:5000/pod-configuration:test
           POD_PUBLISHING_VERSION: 172.15.0.11:5000/pod-publishing:test
+      - name: Wait for registry
+        run:
+          for i in $(seq 1 250); do
+            RUNNING=$(docker inspect --format="{{.State.Running}}" docker-registry)
+            if [ "$RUNNING" == "true" ]; then break; fi
+            done
       - name:  Push local docker images
         run: |
           docker push 172.15.0.11:5000/operator-service:test
