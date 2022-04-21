@@ -83,11 +83,7 @@ jobs:
         run: |
           for i in $(seq 1 250); do
             sleep 5
-            RUNNING=$(docker inspect --format="{{.State.Running}}" docker-registry)
-            if [ $? -eq 1 ]; then
-                echo "3" # "Registry not started."
-            fi
-            if [ "$RUNNING" == "true" ]; then
+            if [RUNNING=$(docker inspect --format="{{.State.Running}}" docker-registry)] then
               break
             fi
             done
