@@ -16,65 +16,60 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Set ADDRESS_FILE
-        run: echo "ADDRESS_FILE=${HOME}/.ocean/ocean-contracts/artifacts/address.json" >> $GITHUB_ENV
-      - name: Login to Docker Hub
-        if: ${{ env.DOCKERHUB_PASSWORD && env.DOCKERHUB_USERNAME }}
-        run: |
-          echo "Login to Docker Hub";echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-      - name: Build local Docker for operator-service
-        run: docker build -t '172.15.0.11:5000/operator-service:test' .
-      
-      
-      - name: Checkout Operator-Engine
-        uses: actions/checkout@v2
-        with:
-          repository: 'oceanprotocol/operator-engine'
-          path: 'operator-engine'
-          ref: v4main
-      - name: Build local Docker for operator-engine
-        working-directory: ${{ github.workspace }}/operator-engine
-        run: docker build -t '172.15.0.11:5000/operator-engine:test' .
-      
-      
-      - name: Checkout Pod-configuration
-        uses: actions/checkout@v2
-        with:
-          repository: 'oceanprotocol/pod-configuration'
-          path: 'pod-configuration'
-          ref: v4main
-      - name: Build local Docker for pod-configuration
-        working-directory: ${{ github.workspace }}/pod-configuration
-        run: docker build -t '172.15.0.11:5000/pod-configuration:test' .
-      
-      
-      - name: Checkout pod-publishing
-        uses: actions/checkout@v2
-        with:
-          repository: 'oceanprotocol/pod-publishing'
-          path: 'pod-publishing'
-          ref: v4main
-      - name: Build local Docker for pod-publishing
-        working-directory: ${{ github.workspace }}/pod-publishing
-        run: docker build -t '172.15.0.11:5000/pod-publishing:test' .
       - name: Checkout Barge
         uses: actions/checkout@v2
         with:
           repository: 'oceanprotocol/barge'
           path: 'barge'
           ref: v4
-      
+      - name: Checkout Operator-Engine
+        uses: actions/checkout@v2
+        with:
+          repository: 'oceanprotocol/operator-engine'
+          path: 'operator-engine'
+          ref: v4main
+      - name: Checkout Pod-configuration
+        uses: actions/checkout@v2
+        with:
+          repository: 'oceanprotocol/pod-configuration'
+          path: 'pod-configuration'
+          ref: v4main
+      - name: Checkout pod-publishing
+        uses: actions/checkout@v2
+        with:
+          repository: 'oceanprotocol/pod-publishing'
+          path: 'pod-publishing'
+          ref: v4main
+
       - name: Update local docker settings 
         working-directory: ${{ github.workspace }}/barge
         run: |
+          ls -l ./
           sudo mkdir /etc/docker/certs.d
           sudo mkdir /etc/docker/certs.d/172.15.0.11:5000
           sudo cp ./certs/registry.crt /etc/docker/certs.d/172.15.0.11:5000/ca.crt
 
+      - name: Build local Docker for operator-service
+        run: docker build -t '172.15.0.11:5000/operator-service:test' .
+      
+      
+      - name: Build local Docker for operator-engine
+        working-directory: ${{ github.workspace }}/operator-engine
+        run: docker build -t '172.15.0.11:5000/operator-engine:test' .
+      
+      
+      - name: Build local Docker for pod-configuration
+        working-directory: ${{ github.workspace }}/pod-configuration
+        run: docker build -t '172.15.0.11:5000/pod-configuration:test' .
+      
+      
+      - name: Build local Docker for pod-publishing
+        working-directory: ${{ github.workspace }}/pod-publishing
+        run: docker build -t '172.15.0.11:5000/pod-publishing:test' .
+      
+      - name: Set ADDRESS_FILE
+        run: echo "ADDRESS_FILE=${HOME}/.ocean/ocean-contracts/artifacts/address.json" >> $GITHUB_ENV
       - name: Run Barge
         working-directory: ${{ github.workspace }}/barge
         run: |
