@@ -80,7 +80,7 @@ jobs:
           POD_CONFIGURATION_VERSION: 172.15.0.11:5000/pod-configuration:test
           POD_PUBLISHING_VERSION: 172.15.0.11:5000/pod-publishing:test
       - name: Wait for registry
-        run:
+        run: |
           for i in $(seq 1 250); do
               RUNNING=$(docker inspect --format="{{.State.Running}}" docker-registry)
               [ "$RUNNING" == "true" ] && break
