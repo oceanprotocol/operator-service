@@ -1,9 +1,10 @@
 MOCK_JOB_STATUS = {"value": "test"}
 MOCK_JOBS_LIST = ["job1", "job2"]
+MOCK_ENVIRONMENTS = ["ocean-compute"]
 
 
 class SQLMock:
-    expected_agreement_id = None
+    expected_agreement_id = "0x0"
     expected_job_id = None
     expected_owner = None
     stopped_jobs = []
@@ -26,10 +27,12 @@ class SQLMock:
         assert agreement_id == SQLMock.expected_agreement_id
         assert job_id == SQLMock.expected_job_id
         assert owner == SQLMock.expected_owner
+        return True
 
     @staticmethod
-    def mock_create_sql_job(agreement_id, job_id, owner):
-        SQLMock.assert_expected_params(agreement_id, job_id, owner)
+    def mock_create_sql_job(agreement_id, job_id, owner,body, namespace, provider_address):
+        # SQLMock.assert_expected_params(agreement_id, job_id, owner)
+        return True
 
     @staticmethod
     def mock_get_sql_jobs(agreement_id, job_id, owner):
@@ -48,3 +51,6 @@ class SQLMock:
     def mock_get_sql_status(agreement_id, job_id, owner):
         SQLMock.assert_expected_params(agreement_id, job_id, owner)
         return MOCK_JOB_STATUS
+    
+    def check_environment_exists(environment):
+        return environment in MOCK_ENVIRONMENTS

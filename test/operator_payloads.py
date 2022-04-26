@@ -4,6 +4,8 @@ VALID_COMPUTE_BODY = {
     "agreementId": "0x0",
     "owner": "0xC41808BBef371AD5CFc76466dDF9dEe228d2BdAA",
     "providerSignature": "sig",
+    "environment":"ocean-compute",
+    "nonce": 1234,
     "workflow": {
         "stages": [
             {

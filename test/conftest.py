@@ -21,6 +21,9 @@ def setup_mocks(monkeypatch):
 
     def mock_uuid():
         return FAKE_UUID
+    
+    def mock_get_signer(signature,message):
+        return "0x1234"
 
     monkeypatch.setattr("kubernetes.config.load_kube_config", mock_uuid)
 
@@ -32,6 +35,7 @@ def setup_mocks(monkeypatch):
     import operator_service.utils
    
     monkeypatch.setattr(operator_service.utils, "generate_new_id", mock_uuid)
+    monkeypatch.setattr("operator_service.utils.get_signer", mock_get_signer)
     monkeypatch.setattr("operator_service.kubernetes_api.KubeAPI", KubeAPIMock)
 
     monkeypatch.setattr(
@@ -49,3 +53,8 @@ def setup_mocks(monkeypatch):
     monkeypatch.setattr(
         operator_service.routes, "get_sql_status", SQLMock.mock_get_sql_status
     )
+    monkeypatch.setattr(
+        operator_service.routes, "check_environment_exists", SQLMock.check_environment_exists
+    )
+    
+
