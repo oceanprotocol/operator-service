@@ -94,7 +94,7 @@ def process_provider_signature_validation(signature, original_msg, nonce):
 
     db_nonce = get_nonce_for_certain_provider(address)
 
-    if db_nonce and float(nonce) < float(db_nonce):
+    if db_nonce and float(nonce) <= float(db_nonce):
         msg = (
             f"Invalid signature expected nonce ({db_nonce}) > current nonce ({nonce})."
         )
