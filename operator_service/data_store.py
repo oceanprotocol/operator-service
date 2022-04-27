@@ -163,7 +163,9 @@ def get_nonce_for_certain_provider(provider_address: str):
     try:
         rows = _execute_query(select_query, params, "get_nonce", get_rows=True)
         if not rows:
+            logger.info("nonce is null")
             return []
+        logger.info(f"nonce found: {max([float(row[0]) for row in rows])}")
         return max([float(row[0]) for row in rows])
     except (Exception, psycopg2.Error) as error:
         logger.error(f"PG query error: {error}")
