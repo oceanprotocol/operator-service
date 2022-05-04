@@ -30,7 +30,9 @@ class SQLMock:
         return True
 
     @staticmethod
-    def mock_create_sql_job(agreement_id, job_id, owner,body, namespace, provider_address):
+    def mock_create_sql_job(
+        agreement_id, job_id, owner, body, namespace, provider_address
+    ):
         # SQLMock.assert_expected_params(agreement_id, job_id, owner)
         return True
 
@@ -51,6 +53,6 @@ class SQLMock:
     def mock_get_sql_status(agreement_id, job_id, owner):
         SQLMock.assert_expected_params(agreement_id, job_id, owner)
         return MOCK_JOB_STATUS
-    
+
     def check_environment_exists(environment):
         return environment in MOCK_ENVIRONMENTS
