@@ -7,6 +7,7 @@ from kubernetes.client.rest import ApiException
 
 from operator_service.config import Config
 from operator_service.kubernetes_api import KubeAPI
+from operator_service.utils import check_admin
 
 adminpg_services = Blueprint("adminpg_services", __name__)
 admin_services = Blueprint("admin_services", __name__)
@@ -26,6 +27,7 @@ def init_pgsql_compute():
     consumes:
       - application/json
     """
+    check_admin()
     output = ""
     connection = None
     cursor = None
@@ -139,6 +141,7 @@ def get_compute_job_info():
         required: true
         type: string
     """
+    check_admin()
     try:
         job_id = request.args["jobId"]
         api_response = KubeAPI(config).get_namespaced_custom_object(job_id)
@@ -159,6 +162,7 @@ def list_compute_jobs():
     consumes:
       - application/json
     """
+    check_admin()
     try:
         api_response = KubeAPI(config).list_namespaced_custom_object()
         result = list()
@@ -202,6 +206,7 @@ def get_logs():
       404:
         description: Pod not found for the given parameters
     """
+    check_admin()
     data = request.args
     kube_api = KubeAPI(config)
     try:
