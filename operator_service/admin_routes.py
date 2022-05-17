@@ -27,8 +27,13 @@ def init_pgsql_compute():
     consumes:
       - application/json
     """
-    check_admin()
     output = ""
+    admin = request.headers.get("Admin")
+    msg, code = check_admin(admin)
+    if code != 200:
+        output = output + msg + "\nstatus code: " + str(code)
+        logger.error(output)
+        return output, code
     connection = None
     cursor = None
     try:
@@ -141,7 +146,13 @@ def get_compute_job_info():
         required: true
         type: string
     """
-    check_admin()
+    output = ""
+    admin = request.headers.get("Admin")
+    msg, code = check_admin(admin)
+    if code != 200:
+        output = output + msg + "\nstatus code: " + str(code)
+        logger.error(output)
+        return output, code
     try:
         job_id = request.args["jobId"]
         api_response = KubeAPI(config).get_namespaced_custom_object(job_id)
@@ -162,7 +173,13 @@ def list_compute_jobs():
     consumes:
       - application/json
     """
-    check_admin()
+    output = ""
+    admin = request.headers.get("Admin")
+    msg, code = check_admin(admin)
+    if code != 200:
+        output = output + msg + "\nstatus code: " + str(code)
+        logger.error(output)
+        return output, code
     try:
         api_response = KubeAPI(config).list_namespaced_custom_object()
         result = list()
@@ -206,7 +223,13 @@ def get_logs():
       404:
         description: Pod not found for the given parameters
     """
-    check_admin()
+    output = ""
+    admin = request.headers.get("Admin")
+    msg, code = check_admin(admin)
+    if code != 200:
+        output = output + msg + "\nstatus code: " + str(code)
+        logger.error(output)
+        return output, code
     data = request.args
     kube_api = KubeAPI(config)
     try:
