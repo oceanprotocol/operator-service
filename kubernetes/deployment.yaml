@@ -31,6 +31,8 @@ spec:
           value: "0"
         - name: ALLOWED_PROVIDERS
           value: ""
+        - name: ALLOWED_ADMINS
+          value: ""
         - name: POSTGRES_DB
           valueFrom:
             configMapKeyRef:
