@@ -29,7 +29,7 @@ install_requirements = [
     "pytz==2018.5",
     "simplejson>=3.13.2",
     "psycopg2>=2.8.4",
-    "ocean-lib==1.0.0a3"
+    "ocean-lib==1.0.0a3",
 ]
 
 setup_requirements = [

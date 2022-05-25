@@ -152,7 +152,7 @@ ALGO_metadata = {
             "tag": "python-branin",
             "checksum": "44e10daa6637893f4276bb8d7301eb35306ece50f61ca34dcab550",
         },
-    }
+    },
 }
 
 ALGO_url_file = UrlFile(
@@ -257,5 +257,3 @@ assert len(model) > 0, "unpickle result unsuccessful"
 api_url = "http://172.15.0.13:31000/api/v1"
 get_environments_response = requests.get(f"{api_url}/runningjobs")
 assert get_environments_response.status_code == 200
-
-
