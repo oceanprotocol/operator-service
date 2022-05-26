@@ -124,7 +124,7 @@ def start_compute_job():
                           }
                         }
     response:
-      201:
+      200:
         description: Workflow inited successfully.
       400:
         description: Some error
