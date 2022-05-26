@@ -21,6 +21,7 @@ req_body["nonce"] = nonce
 start_compute_response = requests.post(f"{api_url}/compute", json=req_body)
 assert start_compute_response.status_code == 200
 start_compute = start_compute_response.json()
+assert len(start_compute) == 1
 assert start_compute[0]["agreementId"]
 assert start_compute[0]["jobId"]
 assert start_compute[0]["owner"] == req_body["owner"]
@@ -36,14 +37,15 @@ assert int(float(start_compute[0]["dateCreated"])) == int(nonce)
 
 # Get the compute job status
 req_body = {
-    "agreementId": start_compute["agreementId"],
-    "owner": start_compute["owner"],
-    "jobId": start_compute["jobId"],
+    "agreementId": start_compute[0]["agreementId"],
+    "owner": start_compute[0]["owner"],
+    "jobId": start_compute[0]["jobId"],
     "providerSignature": provider_signature,
 }
 compute_status_response = requests.get(f"{api_url}/compute", json=req_body)
 assert compute_status_response.status_code == 200
 compute_status = compute_status_response.json()
+assert len(compute_status) == 1
 assert compute_status[0]["agreementId"]
 assert compute_status[0]["jobId"]
 assert compute_status[0]["owner"] == req_body["owner"]
@@ -52,7 +54,15 @@ assert compute_status[0]["algoDID"] == start_compute[0]["algoDID"]
 assert compute_status[0]["inputDID"][0] == start_compute[0]["inputDID"][0]
 assert int(float(compute_status[0]["dateCreated"])) == int(nonce)
 
-
 # Get running jobs
-# get_environments_response = requests.get(f"{api_url}/runningjobs")
-# assert get_environments_response.status_code == 200
+get_environments_response = requests.get(f"{api_url}/runningjobs")
+assert get_environments_response.status_code == 200
+compute_status = get_environments_response.json()
+assert len(compute_status) == 1
+assert compute_status[0]["agreementId"]
+assert compute_status[0]["jobId"]
+assert compute_status[0]["owner"] == req_body["owner"]
+assert compute_status[0]["statusText"] == "Warming up"
+assert compute_status[0]["algoDID"] == start_compute[0]["algoDID"]
+assert compute_status[0]["inputDID"][0] == start_compute[0]["inputDID"][0]
+assert int(float(compute_status[0]["dateCreated"])) == int(nonce)
