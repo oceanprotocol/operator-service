@@ -20,25 +20,37 @@ req_body["nonce"] = nonce
 # Start the compute job
 start_compute_response = requests.post(f"{api_url}/compute", json=req_body)
 assert start_compute_response.status_code == 200
-assert (
-    start_compute_response.text
-    == '[{"agreementId": "0x0", "jobId": "7d15da96e74b4d0fa86c4c08eab660dc", "owner": '
-    '"0xC41808BBef371AD5CFc76466dDF9dEe228d2BdAA", "status": 1, "statusText": "Warming up", "dateCreated": '
-    '"1653574759.01596", "dateFinished": "null", "results": "", "stopreq": 0, "removed": 0, "algoDID": '
-    '"did:op:87bdaabb33354d2eb014af5091c604fb4b0f67dc6cca4d18a96547bffdc27bcf", "inputDID": ['
-    '"did:op:87bdaabb33354d2eb014af5091c604fb4b0f67dc6cca4d18a96547bffdc27bcf"]}] '
-)
-
 start_compute = start_compute_response.json()
+assert start_compute[0]["agreementId"]
+assert start_compute[0]["jobId"]
+assert start_compute[0]["owner"] == req_body["owner"]
+assert start_compute[0]["statusText"] == "Warming up"
+assert (
+    start_compute[0]["algoDID"] == req_body["workflow"]["stages"][0]["algorithm"]["id"]
+)
+assert (
+    start_compute[0]["inputDID"][0]
+    == req_body["workflow"]["stages"][0]["input"][0]["id"]
+)
+assert int(float(start_compute[0]["dateCreated"])) == int(nonce)
 
 # Get the compute job status
 req_body = {
     "agreementId": start_compute["agreementId"],
     "owner": start_compute["owner"],
     "jobId": start_compute["jobId"],
+    "providerSignature": provider_signature,
 }
 compute_status_response = requests.get(f"{api_url}/compute", json=req_body)
 assert compute_status_response.status_code == 200
+compute_status = compute_status_response.json()
+assert compute_status[0]["agreementId"]
+assert compute_status[0]["jobId"]
+assert compute_status[0]["owner"] == req_body["owner"]
+assert compute_status[0]["statusText"] == "Warming up"
+assert compute_status[0]["algoDID"] == start_compute[0]["algoDID"]
+assert compute_status[0]["inputDID"][0] == start_compute[0]["inputDID"][0]
+assert int(float(compute_status[0]["dateCreated"])) == int(nonce)
 
 
 # Get running jobs
