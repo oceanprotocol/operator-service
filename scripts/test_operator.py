@@ -11,7 +11,8 @@ from utils.signature import sign
 api_url = "http://172.15.0.13:31000/api/v1/operator"
 
 req_body = VALID_COMPUTE_BODY
-nonce, provider_signature = sign(owner=req_body["owner"], wallet=consumer_wallet)
+wallet = consumer_wallet()
+nonce, provider_signature = sign(owner=req_body["owner"], wallet=wallet)
 
 req_body["providerSignature"] = provider_signature
 req_body["nonce"] = nonce
