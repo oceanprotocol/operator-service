@@ -3,19 +3,19 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 import time
-
+import os
 import requests
 
-from conftest import consumer_wallet
 from utils.operator_payloads import VALID_COMPUTE_BODY
 from utils.signature import sign
+from eth_account import Account
 
 API_URL = "http://172.15.0.13:31000/api/v1/operator"
 
 req_body = VALID_COMPUTE_BODY
-wallet = consumer_wallet()
+wallet = Account.from_key(os.getenv("TEST_PRIVATE_KEY2"))
 nonce, provider_signature = sign(owner=req_body["owner"], wallet=wallet)
-
+print(nonce)
 req_body["providerSignature"] = provider_signature
 req_body["nonce"] = nonce
 
@@ -23,6 +23,7 @@ req_body["nonce"] = nonce
 start_compute_response = requests.post(f"{API_URL}/compute", json=req_body)
 assert start_compute_response.status_code == 200
 start_compute = start_compute_response.json()
+print(start_compute)
 assert len(start_compute) == 1
 assert start_compute[0]["agreementId"]
 assert start_compute[0]["jobId"]

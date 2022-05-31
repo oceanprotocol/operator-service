@@ -49,6 +49,9 @@ dev_requirements = [
     "pytest-env",
     # not virtualenv: devs should already have it before pip-installing
     "watchdog==0.8.3",
+    "ocean-lib==1.0.0a4",
+    "numpy",
+    "matplotlib"
 ]
 
 
@@ -59,6 +62,7 @@ test_requirements = [
     "pylint",
     "pytest",
     "pytest-watch",
+    "pytest-env"
 ]
 
 setup(
