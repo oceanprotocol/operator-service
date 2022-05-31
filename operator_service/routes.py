@@ -2,7 +2,7 @@ import os
 from os import path
 import logging
 import json
-
+from datetime import datetime
 import kubernetes
 from flask import Blueprint, request, Response
 from kubernetes.client.rest import ApiException
@@ -18,6 +18,7 @@ from operator_service.data_store import (
     get_sql_job_urls,
     get_sql_environments,
     check_environment_exists,
+    check_environment_max_duration
 )
 from operator_service.kubernetes_api import KubeAPI
 from operator_service.utils import (
@@ -138,6 +139,7 @@ def start_compute_job():
         "providerSignature",
         "environment",
         "nonce",
+        "validUntil"
     ]
     msg, status = check_required_attributes(required_attributes, data, "POST:/compute")
     if msg:
@@ -147,6 +149,7 @@ def start_compute_job():
     agreement_id = data.get("agreementId")
     owner = data.get("owner")
     nonce = data.get("nonce")
+    valid_until = data.get("validUntil")
     if not workflow:
         return Response(
             json.dumps(
@@ -166,6 +169,8 @@ def start_compute_job():
             400,
             headers=standard_headers,
         )
+    
+
     # verify provider's signature
     msg, status, provider_address = process_provider_signature_validation(
         data.get("providerSignature"), f"{owner}", nonce
@@ -194,6 +199,18 @@ def start_compute_job():
                 400,
                 headers=standard_headers,
             )
+    #check validUntil
+    seconds = (
+        datetime.fromtimestamp(valid_until) - datetime.utcnow()
+    ).seconds
+    if not check_environment_max_duration(environment, seconds):
+        logger.error(f"Environment has a maxDuration limit less then our validUntil ({valid_until})")
+        return Response(
+            json.dumps({"error": "Environment has a maxDuration less than required validUntil"}),
+            400,
+            headers=standard_headers,
+        )
+    workflow['stages'][0]['compute']['maxtime']= seconds
     job_id = generate_new_id()
     logger.info(f"Got job_id: {job_id}")
     body = create_compute_job(

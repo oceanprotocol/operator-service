@@ -186,6 +186,22 @@ def check_environment_exists(environment):
     else:
         return True
 
+def check_environment_max_duration(environment, duration):
+    params = dict()
+    select_query = """
+    SELECT namespace, status,extract(epoch from lastping) as lastping from envs WHERE namespace=%(env)s
+    """
+    params["env"] = environment
+    rows = _execute_query(
+        select_query, params, "check_environment_max_duration", get_rows=True
+    )
+    for row in rows:
+        temprow = json.loads(row[1])
+        if temprow['maxDuration'] > duration:
+            return True
+    return False
+    
+
 
 def create_sql_job(agreement_id, job_id, owner, body, namespace, provider_address):
     postgres_insert_query = """
