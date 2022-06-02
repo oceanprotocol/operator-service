@@ -28,7 +28,7 @@ jobs:
         with:
           repository: 'oceanprotocol/operator-engine'
           path: 'operator-engine'
-          ref: admin-routes-auth
+          ref: v4main
       - name: Checkout Pod-configuration
         uses: actions/checkout@v2
         with:
