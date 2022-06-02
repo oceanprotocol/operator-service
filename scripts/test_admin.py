@@ -2,9 +2,12 @@
 # Copyright 2022 Ocean Protocol Foundation
 # SPDX-License-Identifier: Apache-2.0
 #
+import os
+
 import requests
 
 API_URL = "http://172.15.0.13:31000/api/v1/operator"
+os.environ["ALLOWED_ADMINS"] = '["0x6d39a833d1a6789aeca50db85cb830bc08319f45"]'
 
 # Test with no headers
 pgsql_init_response = requests.post(f"{API_URL}/pgsqlinit")
@@ -32,3 +35,5 @@ headers = {"Admin": "0x6d39a833d1a6789aeca50db85cb830bc08319f45"}
 pgsql_init_response = requests.post(f"{API_URL}/pgsqlinit", headers=headers)
 assert pgsql_init_response.status_code == 200
 assert "" in pgsql_init_response.text
+
+del os.environ["ALLOWED_ADMINS"]
