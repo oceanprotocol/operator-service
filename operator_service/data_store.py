@@ -187,6 +187,35 @@ def check_environment_exists(environment):
         return True
 
 
+def get_job_by_provider_and_owner(owner, provider):
+    params = dict()
+    select_query = """
+        SELECT agreementId, workflowId, owner, status, statusText, 
+        extract(epoch from dateCreated) as dateCreated, 
+        namespace FROM jobs WHERE provider=%(provider)s
+        AND owner=%(owner)s
+        """
+    params["owner"] = owner
+    params["provider"] = provider
+    result = []
+    rows = _execute_query(
+        select_query, params, "get_job_by_provider_and_owner", get_rows=True
+    )
+    if not rows:
+        return result
+    for row in rows:
+        temprow = dict()
+        temprow["agreementId"] = row[0]
+        temprow["jobId"] = row[1]
+        temprow["owner"] = row[2]
+        temprow["status"] = row[3]
+        temprow["statusText"] = row[4]
+        temprow["dateCreated"] = row[5]
+        temprow["namespace"] = row[6]
+        result.append(temprow)
+    return result
+
+
 def create_sql_job(agreement_id, job_id, owner, body, namespace, provider_address):
     postgres_insert_query = """
         INSERT 
