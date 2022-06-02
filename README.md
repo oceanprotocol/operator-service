@@ -119,6 +119,7 @@ $ curl -X GET "http://localhost:8050/api/v1/operator/list" -H "accept: applicati
      POSTGRES_PORT = Postgresql port
      SIGNATURE_REQUIRED = 0 -> no signature required, 1 -> request brizo signature
      ALLOWED_PROVIDERS = Json array with allowed providers that can access the endpoints
+     ALLOWED_ADMINS = Array with allowed admins that can access the admin routes.
      OPERATOR_ADDRESS = Address used by Compute environment (IMPORTANT: Corresponding private key must be set in operator-engine env)
      DEFAULT_NAMESPACE = namespace which will run the jobs
      X-API-KEY = if defined, when downloading a compute output, will add X-API-KEY header (used for IPFS auth)
