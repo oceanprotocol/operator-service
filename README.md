@@ -127,8 +127,10 @@ $ curl -X GET "http://localhost:8050/api/v1/operator/list" -H "accept: applicati
 
 ### Testing
 
-Automatic tests are set up via Travis, executing `tox`.
-Our tests use the pytest framework.
+Install `ocean-lib` with the following command: `pip3 install ocean-lib==1.0.0a4`.
+
+Run `exportlocal.sh` script for creating the env vars and use `python3`
+to execute the tests from `tests` folder.
 
 ### New Version
 

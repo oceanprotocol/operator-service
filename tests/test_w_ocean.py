@@ -4,12 +4,10 @@
 #
 import io
 import os
-import pickle
 import time
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-import pytest
 from PIL import Image
 
 from ocean_lib.example_config import ExampleConfig
@@ -21,38 +19,6 @@ from ocean_lib.structures.file_objects import UrlFile
 from ocean_lib.web3_internal.wallet import Wallet
 
 
-
-@pytest.mark.slow
-@pytest.mark.parametrize(
-    "dataset_name,dataset_url,algorithm_name,algorithm_url,algorithm_docker_tag",
-    [
-        (
-            "lena",
-            "https://raw.githubusercontent.com/oceanprotocol/c2d-examples/main/peppers_and_grayscale/peppers.tiff",
-            "grayscale",
-            "https://raw.githubusercontent.com/oceanprotocol/c2d-examples/main/peppers_and_grayscale/grayscale.py",
-            "python-branin",
-        ),
-        (
-            "iris",
-            "https://raw.githubusercontent.com/oceanprotocol/c2d-examples/main/iris_and_logisitc_regression/dataset_61_iris.csv",
-            "logistic-regression",
-            "https://raw.githubusercontent.com/oceanprotocol/c2d-examples/main/iris_and_logisitc_regression/logistic_regression.py",
-            "python-panda",
-        ),
-    ],
-)
-def test_c2d_flow_more_examples_readme(
-    dataset_name, dataset_url, algorithm_name, algorithm_url, algorithm_docker_tag
-):
-    """This test mirrors the c2d-flow-more-examples.md README.
-    As such, it does not use the typical pytest fixtures.
-    """
-    c2d_flow_readme(
-        dataset_name, dataset_url, algorithm_name, algorithm_url, algorithm_docker_tag
-    )
-
-
 def c2d_flow_readme(
     dataset_name, dataset_url, algorithm_name, algorithm_url, algorithm_docker_tag
 ):
@@ -61,6 +27,7 @@ def c2d_flow_readme(
     # 2. Alice publishes data asset with compute service
     config = ExampleConfig.get_config()
     ocean = Ocean(config)
+
     # Create Alice's wallet
     alice_private_key = os.getenv("TEST_PRIVATE_KEY1")
     alice_wallet = Wallet(
@@ -76,13 +43,13 @@ def c2d_flow_readme(
     assert alice_wallet.web3.eth.get_balance(alice_wallet.address) > 0, "need ETH"
 
     # Publish the data NFT token
-    data_nft = ocean.create_data_nft("NFTToken1", "NFT1", alice_wallet)
-    assert data_nft.address
-    assert data_nft.token_name()
-    assert data_nft.symbol()
+    erc721_nft = ocean.create_erc721_nft("NFTToken1", "NFT1", alice_wallet)
+    assert erc721_nft.address
+    assert erc721_nft.token_name()
+    assert erc721_nft.symbol()
 
     # Publish the datatoken
-    DATA_datatoken = data_nft.create_datatoken(
+    DATA_datatoken = erc721_nft.create_datatoken(
         "Datatoken 1",
         "DT1",
         from_wallet=alice_wallet,
@@ -133,8 +100,8 @@ def c2d_flow_readme(
         publisher_wallet=alice_wallet,
         encrypted_files=DATA_encrypted_files,
         services=[DATA_compute_service],
-        erc721_address=data_nft.address,
-        deployed_datatokens=[DATA_datatoken],
+        erc721_address=erc721_nft.address,
+        deployed_erc20_tokens=[DATA_datatoken],
     )
 
     assert DATA_asset.did, "create dataset with compute service unsuccessful"
@@ -142,7 +109,7 @@ def c2d_flow_readme(
     # 3. Alice publishes algorithm
 
     # Publish the algorithm NFT token
-    ALGO_nft_token = ocean.create_data_nft("NFTToken1", "NFT1", alice_wallet)
+    ALGO_nft_token = ocean.create_erc721_nft("NFTToken1", "NFT1", alice_wallet)
     assert ALGO_nft_token.address
 
     # Publish the datatoken
@@ -190,7 +157,7 @@ def c2d_flow_readme(
         publisher_wallet=alice_wallet,
         encrypted_files=ALGO_encrypted_files,
         erc721_address=ALGO_nft_token.address,
-        deployed_datatokens=[ALGO_datatoken],
+        deployed_erc20_tokens=[ALGO_datatoken],
     )
 
     assert ALGO_asset.did, "create algorithm unsuccessful"
@@ -271,19 +238,19 @@ def c2d_flow_readme(
     )[0]
     assert output, "algorithm output not found"
 
-    if dataset_name == "branin" or dataset_name == "iris":
-        unpickle_result(output)
-    else:
-        load_image(output)
-
-
-def unpickle_result(pickled):
-    """Unpickle the gaussian model result"""
-    model = pickle.loads(pickled)
-    assert len(model) > 0, "unpickle result unsuccessful"
+    load_image(output)
 
 
 def load_image(image_bytes):
     """Load the image result"""
     image = Image.open(io.BytesIO(image_bytes))
     assert image, "load image unsuccessful"
+
+
+c2d_flow_readme(
+    dataset_name="lena",
+    dataset_url="https://raw.githubusercontent.com/oceanprotocol/c2d-examples/main/peppers_and_grayscale/peppers.tiff",
+    algorithm_name="grayscale",
+    algorithm_url="https://raw.githubusercontent.com/oceanprotocol/c2d-examples/main/peppers_and_grayscale/grayscale.py",
+    algorithm_docker_tag="python-branin",
+)
