@@ -22,7 +22,7 @@ jobs:
         with:
           repository: 'oceanprotocol/barge'
           path: 'barge'
-          ref: v4
+          ref: main
       - name: Checkout Operator-Engine
         uses: actions/checkout@v2
         with:
