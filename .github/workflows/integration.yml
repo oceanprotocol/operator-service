@@ -108,6 +108,6 @@ jobs:
       - name: integration
         run: curl http://172.15.0.13:31000/
       - name:  docker logs
-        run: docker logs ocean_ocean-contracts_1 && docker logs ocean_aquarius_1 && docker logs ocean_provider_1 && docker logs ocean_provider2_1 && docker logs ocean_computetodata_1
+        run: docker logs ocean_ocean-contracts_1 && docker logs ocean_aquarius_1 && docker logs ocean_provider_1 && docker logs ocean_provider2_1 && docker logs ocean_computetodata_1 && docker logs ocean_kindcluster_1
         if: ${{ failure() }}
 
