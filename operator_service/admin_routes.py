@@ -31,7 +31,9 @@ def init_pgsql_compute():
     """
     output = ""
     admin = request.headers.get("Admin")
+    logger.info(f"Admin {admin}")
     msg, code = check_admin(admin)
+    logger.info(f"msg, code: {msg}, {code}")
     if code != 200:
         output = output + msg + "\nstatus code: " + str(code)
         logger.error(output)

@@ -229,6 +229,8 @@ def sanitize_response_for_provider(d):
 
 def check_admin(admin):
     allowed_admins = json.loads(os.environ["ALLOWED_ADMINS"])
+    logger.info(f"allowed admins: {allowed_admins}")
+    logger.info(f'{os.environ["ALLOWED_ADMINS"]}')
     if not admin:
         msg = f"Admin header is empty."
         logger.error(f"msg: {msg}")
