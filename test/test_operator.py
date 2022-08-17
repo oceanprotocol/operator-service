@@ -45,7 +45,11 @@ def sign_message(message, wallet):
 
 def decorate_nonce(payload):
     nonce = str(datetime.utcnow().timestamp())
-    did = payload["workflow"]["stages"][0]["input"][0]["id"]
+    try:
+        did = payload["workflow"]["stages"][0]["input"][0]["id"]
+    except (KeyError, IndexError):
+        did = ""
+
     wallet = payloads.VALID_WALLET
 
     msg = f"{wallet.address}{did}{nonce}"
@@ -84,26 +88,34 @@ def test_start_compute_job(client, monkeypatch):
 
     response = client.post(COMPUTE_URL, json={})
     assert response.status_code == 400
+    assert response.json["error"] == "payload seems empty."
 
-    response = client.post(COMPUTE_URL, json=payloads.NO_WORKFLOW_COMPUTE_BODY)
+    response = client.post(COMPUTE_URL, json=decorate_nonce(payloads.NO_WORKFLOW_COMPUTE_BODY))
     assert response.status_code == 400
+    assert response.json["error"] == '`workflow` is required in the payload and must include workflow stages'
 
-    response = client.post(COMPUTE_URL, json=payloads.NO_STAGES_COMPUTE_BODY)
+    with patch('operator_service.routes.check_environment_exists', side_effect=[True]):
+        response = client.post(COMPUTE_URL, json=decorate_nonce(payloads.NO_STAGES_COMPUTE_BODY))
     assert response.status_code == 400
+    assert response.json["error"] == "Missing stages"
 
-    response = client.post(COMPUTE_URL, json=payloads.INVALID_STAGE_COMPUTE_BODY)
+    with patch('operator_service.routes.check_environment_exists', side_effect=[True]):
+        response = client.post(COMPUTE_URL, json=decorate_nonce(payloads.INVALID_STAGE_COMPUTE_BODY))
     assert response.status_code == 400
+    assert response.json["error"] == "Missing algorithm in stage 0"
 
     monkeypatch.setenv("ALGO_POD_TIMEOUT", str(1200))
     monkeypatch.setattr(KubeAPIMock, "expected_maxtime", 1200)
 
-    response = client.post(COMPUTE_URL, json=payloads.VALID_COMPUTE_BODY)
+    with patch('operator_service.routes.check_environment_exists', side_effect=[True]):
+        response = client.post(COMPUTE_URL, json=decorate_nonce(payloads.VALID_COMPUTE_BODY))
     assert response.status_code == 200
     assert response.json == MOCK_JOB_STATUS
 
-    response = client.post(
-        COMPUTE_URL, json=payloads.VALID_COMPUTE_BODY_WITH_NO_MAXTIME
-    )
+    with patch('operator_service.routes.check_environment_exists', side_effect=[True]):
+        response = client.post(
+            COMPUTE_URL, json=decorate_nonce(payloads.VALID_COMPUTE_BODY_WITH_NO_MAXTIME)
+        )
     assert response.status_code == 200
     assert response.json == MOCK_JOB_STATUS
 
