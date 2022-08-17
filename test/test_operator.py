@@ -81,8 +81,10 @@ def test_start_compute_job(client, monkeypatch):
 
     monkeypatch.setenv("ALLOWED_PROVIDERS", str([payloads.VALID_WALLET.address]))
 
-    with patch('operator_service.routes.check_environment_exists', side_effect=[True]):
-        response = client.post(COMPUTE_URL, json=decorate_nonce(payloads.VALID_COMPUTE_BODY))
+    with patch("operator_service.routes.check_environment_exists", side_effect=[True]):
+        response = client.post(
+            COMPUTE_URL, json=decorate_nonce(payloads.VALID_COMPUTE_BODY)
+        )
     assert response.status_code == 200
     assert response.json == MOCK_JOB_STATUS
 
@@ -90,31 +92,43 @@ def test_start_compute_job(client, monkeypatch):
     assert response.status_code == 400
     assert response.json["error"] == "payload seems empty."
 
-    response = client.post(COMPUTE_URL, json=decorate_nonce(payloads.NO_WORKFLOW_COMPUTE_BODY))
+    response = client.post(
+        COMPUTE_URL, json=decorate_nonce(payloads.NO_WORKFLOW_COMPUTE_BODY)
+    )
     assert response.status_code == 400
-    assert response.json["error"] == '`workflow` is required in the payload and must include workflow stages'
+    assert (
+        response.json["error"]
+        == "`workflow` is required in the payload and must include workflow stages"
+    )
 
-    with patch('operator_service.routes.check_environment_exists', side_effect=[True]):
-        response = client.post(COMPUTE_URL, json=decorate_nonce(payloads.NO_STAGES_COMPUTE_BODY))
+    with patch("operator_service.routes.check_environment_exists", side_effect=[True]):
+        response = client.post(
+            COMPUTE_URL, json=decorate_nonce(payloads.NO_STAGES_COMPUTE_BODY)
+        )
     assert response.status_code == 400
     assert response.json["error"] == "Missing stages"
 
-    with patch('operator_service.routes.check_environment_exists', side_effect=[True]):
-        response = client.post(COMPUTE_URL, json=decorate_nonce(payloads.INVALID_STAGE_COMPUTE_BODY))
+    with patch("operator_service.routes.check_environment_exists", side_effect=[True]):
+        response = client.post(
+            COMPUTE_URL, json=decorate_nonce(payloads.INVALID_STAGE_COMPUTE_BODY)
+        )
     assert response.status_code == 400
     assert response.json["error"] == "Missing algorithm in stage 0"
 
     monkeypatch.setenv("ALGO_POD_TIMEOUT", str(1200))
     monkeypatch.setattr(KubeAPIMock, "expected_maxtime", 1200)
 
-    with patch('operator_service.routes.check_environment_exists', side_effect=[True]):
-        response = client.post(COMPUTE_URL, json=decorate_nonce(payloads.VALID_COMPUTE_BODY))
+    with patch("operator_service.routes.check_environment_exists", side_effect=[True]):
+        response = client.post(
+            COMPUTE_URL, json=decorate_nonce(payloads.VALID_COMPUTE_BODY)
+        )
     assert response.status_code == 200
     assert response.json == MOCK_JOB_STATUS
 
-    with patch('operator_service.routes.check_environment_exists', side_effect=[True]):
+    with patch("operator_service.routes.check_environment_exists", side_effect=[True]):
         response = client.post(
-            COMPUTE_URL, json=decorate_nonce(payloads.VALID_COMPUTE_BODY_WITH_NO_MAXTIME)
+            COMPUTE_URL,
+            json=decorate_nonce(payloads.VALID_COMPUTE_BODY_WITH_NO_MAXTIME),
         )
     assert response.status_code == 200
     assert response.json == MOCK_JOB_STATUS
@@ -123,23 +137,38 @@ def test_start_compute_job(client, monkeypatch):
 def test_stop_compute_job(client, monkeypatch):
     with monkeypatch.context() as m:
         m.setattr(SQLMock, "expected_agreement_id", "fake-agreement-id")
+        m.setattr(SQLMock, "expected_owner", "fake-owner")
         response = client.put(
-            COMPUTE_URL, json={"agreementId": SQLMock.expected_agreement_id}
+            COMPUTE_URL,
+            json=decorate_nonce(
+                {
+                    "agreementId": SQLMock.expected_agreement_id,
+                    "owner": SQLMock.expected_owner,
+                }
+            ),
         )
         assert response.status_code == 200
         assert response.json == MOCK_JOB_STATUS
         SQLMock.assert_all_jobs_stopped_and_reset()
 
     with monkeypatch.context() as m:
+        m.setattr(SQLMock, "expected_owner", "fake-owner")
         m.setattr(SQLMock, "expected_job_id", "fake-job-id")
-        response = client.put(COMPUTE_URL, json={"jobId": SQLMock.expected_job_id})
+        response = client.put(
+            COMPUTE_URL,
+            json=decorate_nonce(
+                {"jobId": SQLMock.expected_job_id, "owner": SQLMock.expected_owner}
+            ),
+        )
         assert response.status_code == 200
         assert response.json == MOCK_JOB_STATUS
         SQLMock.assert_all_jobs_stopped_and_reset()
 
     with monkeypatch.context() as m:
         m.setattr(SQLMock, "expected_owner", "fake-owner")
-        response = client.put(COMPUTE_URL, json={"owner": SQLMock.expected_owner})
+        response = client.put(
+            COMPUTE_URL, json=decorate_nonce({"owner": SQLMock.expected_owner})
+        )
         assert response.status_code == 200
         assert response.json == MOCK_JOB_STATUS
         SQLMock.assert_all_jobs_stopped_and_reset()
@@ -149,56 +178,48 @@ def test_stop_compute_job(client, monkeypatch):
 
 
 def test_delete_compute_job(client, monkeypatch):
-    with monkeypatch.context() as m:
-        m.setattr(SQLMock, "expected_agreement_id", "fake-agreement-id")
-        response = client.delete(
-            COMPUTE_URL, json={"agreementId": SQLMock.expected_agreement_id}
-        )
-        assert response.status_code == 200
-        assert response.json == MOCK_JOB_STATUS
-        SQLMock.assert_all_jobs_removed_and_reset()
-        KubeAPIMock.assert_all_objects_removed_and_reset()
-
-    with monkeypatch.context() as m:
-        m.setattr(SQLMock, "expected_job_id", "fake-job-id")
-        response = client.delete(COMPUTE_URL, json={"jobId": SQLMock.expected_job_id})
-        assert response.status_code == 200
-        assert response.json == MOCK_JOB_STATUS
-        SQLMock.assert_all_jobs_removed_and_reset()
-        KubeAPIMock.assert_all_objects_removed_and_reset()
-
-    with monkeypatch.context() as m:
-        m.setattr(SQLMock, "expected_owner", "fake-owner")
-        response = client.delete(COMPUTE_URL, json={"owner": SQLMock.expected_owner})
-        assert response.status_code == 200
-        assert response.json == MOCK_JOB_STATUS
-        SQLMock.assert_all_jobs_removed_and_reset()
-        KubeAPIMock.assert_all_objects_removed_and_reset()
-
     response = client.delete(COMPUTE_URL, json={})
-    assert response.status_code == 400
+    assert response.status_code == 200
+    assert response.json == ""
 
 
 def test_get_compute_job_status(client, monkeypatch):
     with monkeypatch.context() as m:
         m.setattr(SQLMock, "expected_agreement_id", "fake-agreement-id")
-        response = client.get(
-            COMPUTE_URL, json={"agreementId": SQLMock.expected_agreement_id}
-        )
-        assert response.status_code == 200
-        assert response.json == MOCK_JOB_STATUS
+        with patch(
+            "operator_service.routes.check_environment_exists", side_effect=[True]
+        ):
+            response = client.get(
+                COMPUTE_URL,
+                json=decorate_nonce({"agreementId": SQLMock.expected_agreement_id}),
+            )
+
+    assert response.status_code == 200
+    assert response.json == MOCK_JOB_STATUS
 
     with monkeypatch.context() as m:
         m.setattr(SQLMock, "expected_job_id", "fake-job-id")
-        response = client.get(COMPUTE_URL, json={"jobId": SQLMock.expected_job_id})
-        assert response.status_code == 200
-        assert response.json == MOCK_JOB_STATUS
+        with patch(
+            "operator_service.routes.check_environment_exists", side_effect=[True]
+        ):
+            response = client.get(
+                COMPUTE_URL, json=decorate_nonce({"jobId": SQLMock.expected_job_id})
+            )
+
+    assert response.status_code == 200
+    assert response.json == MOCK_JOB_STATUS
 
     with monkeypatch.context() as m:
         m.setattr(SQLMock, "expected_owner", "fake-owner")
-        response = client.get(COMPUTE_URL, json={"owner": SQLMock.expected_owner})
-        assert response.status_code == 200
-        assert response.json == MOCK_JOB_STATUS
+        with patch(
+            "operator_service.routes.check_environment_exists", side_effect=[True]
+        ):
+            response = client.get(
+                COMPUTE_URL, json=decorate_nonce({"owner": SQLMock.expected_owner})
+            )
+
+    assert response.status_code == 200
+    assert response.json == MOCK_JOB_STATUS
 
     response = client.get(COMPUTE_URL, json={})
     assert response.status_code == 400
