@@ -20,6 +20,7 @@ RUN apk add --no-cache --update\
 COPY . /operator-service
 WORKDIR /operator-service
 
+RUN pip install --upgrade pip
 RUN pip install .
 
 # config.ini configuration file variables
