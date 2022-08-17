@@ -1,4 +1,4 @@
-FROM python:3.6-alpine
+FROM python:3.8-alpine
 LABEL maintainer="Ocean Protocol <devops@oceanprotocol.com>"
 
 ARG VERSION
@@ -20,7 +20,6 @@ RUN apk add --no-cache --update\
 COPY . /operator-service
 WORKDIR /operator-service
 
-RUN pip install --upgrade pip
 RUN pip install .
 
 # config.ini configuration file variables
