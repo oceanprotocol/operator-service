@@ -1,10 +1,60 @@
+from datetime import datetime
+from eth_keys import KeyAPI
+from eth_keys.backends import NativeECCBackend
+from unittest.mock import patch
 from operator_service.constants import BaseURLs, Metadata
+from web3 import Web3
+
 from . import operator_payloads as payloads
 from .conftest import FAKE_UUID
 from .kube_mock import KubeAPIMock
 from .sql_mock import SQLMock, MOCK_JOB_STATUS
 
 COMPUTE_URL = f"{BaseURLs.BASE_OPERATOR_URL}/compute"
+keys = KeyAPI(NativeECCBackend)
+
+
+def sign_message(message, wallet):
+    """
+    Signs the message with the private key of the given Wallet
+    :param message: str
+    :param wallet: Wallet instance
+    :return: signature
+    """
+    keys_pk = keys.PrivateKey(wallet.key)
+    hexable = Web3.toBytes(text=message) if isinstance(message, str) else message
+
+    message_hash = Web3.solidityKeccak(
+        ["bytes"],
+        [Web3.toHex(hexable)],
+    )
+    prefix = "\x19Ethereum Signed Message:\n32"
+    signable_hash = Web3.solidityKeccak(
+        ["bytes", "bytes"], [Web3.toBytes(text=prefix), Web3.toBytes(message_hash)]
+    )
+    signed = keys.ecdsa_sign(message_hash=signable_hash, private_key=keys_pk)
+
+    v = str(Web3.toHex(Web3.toBytes(signed.v)))
+    r = str(Web3.toHex(Web3.toBytes(signed.r).rjust(32, b"\0")))
+    s = str(Web3.toHex(Web3.toBytes(signed.s).rjust(32, b"\0")))
+
+    signature = "0x" + r[2:] + s[2:] + v[2:]
+
+    return signature
+
+
+def decorate_nonce(payload):
+    nonce = str(datetime.utcnow().timestamp())
+    did = payload["workflow"]["stages"][0]["input"][0]["id"]
+    wallet = payloads.VALID_WALLET
+
+    msg = f"{wallet.address}{did}{nonce}"
+    signature = sign_message(msg, wallet)
+
+    payload["nonce"] = nonce
+    payload["providerSignature"] = signature
+
+    return payload
 
 
 def test_operator(client):
@@ -25,7 +75,10 @@ def test_start_compute_job(client, monkeypatch):
         payloads.VALID_COMPUTE_BODY["workflow"]["stages"][0]["compute"]["maxtime"],
     )
 
-    response = client.post(COMPUTE_URL, json=payloads.VALID_COMPUTE_BODY)
+    monkeypatch.setenv("ALLOWED_PROVIDERS", str([payloads.VALID_WALLET.address]))
+
+    with patch('operator_service.routes.check_environment_exists', side_effect=[True]):
+        response = client.post(COMPUTE_URL, json=decorate_nonce(payloads.VALID_COMPUTE_BODY))
     assert response.status_code == 200
     assert response.json == MOCK_JOB_STATUS
 
