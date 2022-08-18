@@ -13,8 +13,8 @@ def get_sql_status(agreement_id, job_id, owner):
     # enforce strings
     params = dict()
     select_query = """
-    SELECT agreementId, workflowId, owner, status, statusText, 
-        extract(epoch from dateCreated) as dateCreated, 
+    SELECT agreementId, workflowId, owner, status, statusText,
+        extract(epoch from dateCreated) as dateCreated,
         extract(epoch from dateFinished) as dateFinished,
         configlogURL, publishlogURL, algologURL, outputsURL, ddo, stopreq, removed , workflow
     FROM jobs WHERE 1=1
@@ -124,8 +124,8 @@ def get_sql_running_jobs():
     # enforce strings
     params = dict()
     select_query = """
-    SELECT agreementId, workflowId, owner, status, statusText, 
-        extract(epoch from dateCreated) as dateCreated, 
+    SELECT agreementId, workflowId, owner, status, statusText,
+        extract(epoch from dateCreated) as dateCreated,
         namespace,workflow FROM jobs WHERE dateFinished IS NULL
     """
     result = []
@@ -244,10 +244,10 @@ def check_environment_exists(environment):
 
 def create_sql_job(agreement_id, job_id, owner, body, namespace, provider_address):
     postgres_insert_query = """
-        INSERT 
-            INTO jobs 
-                (agreementId,workflowId,owner,status,statusText,workflow,namespace,provider) 
-            VALUES 
+        INSERT
+            INTO jobs
+                (agreementId,workflowId,owner,status,statusText,workflow,namespace,provider)
+            VALUES
                 (%s, %s, %s, %s, %s,%s,%s,%s)"""
     record_to_insert = (
         str(agreement_id),
@@ -280,7 +280,7 @@ def get_pg_connection_and_cursor():
             user=os.getenv("POSTGRES_USER"),
             password=os.getenv("POSTGRES_PASSWORD"),
             host=os.getenv("POSTGRES_HOST"),
-            port=os.getenv("POSTGRES_PORT"),
+            port=os.getenv("POSTGRES_PORT", 5432),
             database=os.getenv("POSTGRES_DB"),
         )
         connection.set_client_encoding("LATIN9")
@@ -295,7 +295,6 @@ def _execute_query(query, record, msg, get_rows=False):
     connection, cursor = get_pg_connection_and_cursor()
     if not connection or not cursor:
         return
-
     try:
         cursor.execute(query, record)
         if get_rows:

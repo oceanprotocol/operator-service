@@ -1,64 +1,14 @@
-from datetime import datetime
-from eth_keys import KeyAPI
-from eth_keys.backends import NativeECCBackend
 from unittest.mock import patch
+
 from operator_service.constants import BaseURLs, Metadata
-from web3 import Web3
 
 from . import operator_payloads as payloads
 from .conftest import FAKE_UUID
 from .kube_mock import KubeAPIMock
-from .sql_mock import SQLMock, MOCK_JOB_STATUS
+from .sql_mock import MOCK_JOB_STATUS, SQLMock
+from .utils import decorate_nonce
 
 COMPUTE_URL = f"{BaseURLs.BASE_OPERATOR_URL}/compute"
-keys = KeyAPI(NativeECCBackend)
-
-
-def sign_message(message, wallet):
-    """
-    Signs the message with the private key of the given Wallet
-    :param message: str
-    :param wallet: Wallet instance
-    :return: signature
-    """
-    keys_pk = keys.PrivateKey(wallet.key)
-    hexable = Web3.toBytes(text=message) if isinstance(message, str) else message
-
-    message_hash = Web3.solidityKeccak(
-        ["bytes"],
-        [Web3.toHex(hexable)],
-    )
-    prefix = "\x19Ethereum Signed Message:\n32"
-    signable_hash = Web3.solidityKeccak(
-        ["bytes", "bytes"], [Web3.toBytes(text=prefix), Web3.toBytes(message_hash)]
-    )
-    signed = keys.ecdsa_sign(message_hash=signable_hash, private_key=keys_pk)
-
-    v = str(Web3.toHex(Web3.toBytes(signed.v)))
-    r = str(Web3.toHex(Web3.toBytes(signed.r).rjust(32, b"\0")))
-    s = str(Web3.toHex(Web3.toBytes(signed.s).rjust(32, b"\0")))
-
-    signature = "0x" + r[2:] + s[2:] + v[2:]
-
-    return signature
-
-
-def decorate_nonce(payload):
-    nonce = str(datetime.utcnow().timestamp())
-    try:
-        did = payload["workflow"]["stages"][0]["input"][0]["id"]
-    except (KeyError, IndexError):
-        did = ""
-
-    wallet = payloads.VALID_WALLET
-
-    msg = f"{wallet.address}{did}{nonce}"
-    signature = sign_message(msg, wallet)
-
-    payload["nonce"] = nonce
-    payload["providerSignature"] = signature
-
-    return payload
 
 
 def test_operator(client):
@@ -66,7 +16,7 @@ def test_operator(client):
     assert response.json["software"] == Metadata.TITLE
 
 
-def test_start_compute_job(client, monkeypatch):
+def test_start_compute_job(client, monkeypatch, setup_mocks):
     monkeypatch.setattr(
         SQLMock, "expected_agreement_id", payloads.VALID_COMPUTE_BODY["agreementId"]
     )
@@ -125,6 +75,11 @@ def test_start_compute_job(client, monkeypatch):
     assert response.status_code == 200
     assert response.json == MOCK_JOB_STATUS
 
+    monkeypatch.setattr(
+        SQLMock,
+        "expected_agreement_id",
+        payloads.VALID_COMPUTE_BODY_WITH_NO_MAXTIME["agreementId"],
+    )
     with patch("operator_service.routes.check_environment_exists", side_effect=[True]):
         response = client.post(
             COMPUTE_URL,
@@ -134,7 +89,7 @@ def test_start_compute_job(client, monkeypatch):
     assert response.json == MOCK_JOB_STATUS
 
 
-def test_stop_compute_job(client, monkeypatch):
+def test_stop_compute_job(client, monkeypatch, setup_mocks):
     with monkeypatch.context() as m:
         m.setattr(SQLMock, "expected_agreement_id", "fake-agreement-id")
         m.setattr(SQLMock, "expected_owner", "fake-owner")
@@ -183,7 +138,7 @@ def test_delete_compute_job(client, monkeypatch):
     assert response.json == ""
 
 
-def test_get_compute_job_status(client, monkeypatch):
+def test_get_compute_job_status(client, monkeypatch, setup_mocks):
     with monkeypatch.context() as m:
         m.setattr(SQLMock, "expected_agreement_id", "fake-agreement-id")
         with patch(
