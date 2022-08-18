@@ -17,11 +17,11 @@ install_requirements = [
     "web3==5.25.0",
     "eth_account",
     "coloredlogs==15.0.1",
-    "Flask==1.0.2",
-    "Flask-Cors==3.0.6",
+    "Flask==2.1.2",
+    "Flask-Cors==3.0.9",
     "flask-swagger==0.2.14",
     "flask-swagger-ui==3.20.9",
-    "Jinja2>=2.10.1",
+    "Jinja2>=2.10.1,<3.1",
     "kubernetes==10.0.0",
     "requests>=2.21.0",
     "gunicorn==19.9.0",
@@ -29,6 +29,7 @@ install_requirements = [
     "pytz==2018.5",
     "simplejson>=3.13.2",
     "psycopg2>=2.8.4",
+    "cryptography==37.0.4",
 ]
 
 setup_requirements = [
@@ -43,6 +44,7 @@ dev_requirements = [
     "flake8",
     "isort",
     "black==22.1.0",
+    "click==8.0.4",
     "pre-commit",
     "licenseheaders",
     "pytest-env",
