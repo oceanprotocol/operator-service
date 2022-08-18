@@ -263,6 +263,7 @@ def stop_compute_job():
         agreement_id = data.get("agreementId", None)
         owner = data.get("owner", None)
         job_id = data.get("jobId", None)
+        chain_id = data.get("chainId", None)
         if not agreement_id or len(agreement_id) < 2:
             agreement_id = None
 
@@ -294,7 +295,7 @@ def stop_compute_job():
             logger.info(f"Stopping job : {name}")
             stop_sql_job(name)
 
-        status_list = get_sql_status(agreement_id, job_id, owner)
+        status_list = get_sql_status(agreement_id, job_id, owner, chain_id)
         return Response(json.dumps(status_list), 200, headers=standard_headers)
 
     except ApiException as e:
