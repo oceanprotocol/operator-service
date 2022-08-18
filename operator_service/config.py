@@ -5,7 +5,7 @@ from configparser import ConfigParser
 class Config:
     def __init__(self):
         config_parser = ConfigParser()
-        config_path = os.environ.get("CONFIG_FILE", "/operator-service/config.ini")
+        config_path = os.environ.get("CONFIG_FILE", "config.ini")
         if not os.path.exists(config_path):
             raise AssertionError(f"config file does not exist in {config_path}")
 

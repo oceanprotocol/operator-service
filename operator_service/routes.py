@@ -148,7 +148,6 @@ def start_compute_job():
     agreement_id = data.get("agreementId")
     owner = data.get("owner")
     nonce = data.get("nonce")
-    workflow["chainId"] = data.get("chainId")
     if not workflow:
         return Response(
             json.dumps(
@@ -160,11 +159,13 @@ def start_compute_job():
             400,
             headers=standard_headers,
         )
+
+    workflow["chainId"] = data.get("chainId")
     environment = data.get("environment")
     if not check_environment_exists(environment, workflow["chainId"]):
-        logger.error(f"Environment invalid or does not exists")
+        logger.error(f"Environment invalid or does not exist")
         return Response(
-            json.dumps({"error": "Environment invalid or does not exists"}),
+            json.dumps({"error": "Environment invalid or does not exist"}),
             400,
             headers=standard_headers,
         )
@@ -206,7 +207,7 @@ def start_compute_job():
     create_sql_job(
         agreement_id, str(job_id), owner, body, environment, provider_address
     )
-    status_list = get_sql_status(agreement_id, str(job_id), owner)
+    status_list = get_sql_status(agreement_id, str(job_id), owner, workflow["chainId"])
 
     return Response(
         json.dumps(sanitize_response_for_provider(status_list)),
