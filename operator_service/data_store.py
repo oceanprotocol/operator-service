@@ -155,6 +155,61 @@ def get_sql_running_jobs():
     return result
 
 
+def get_nonce_for_certain_provider(provider_address: str):
+    params = dict()
+    select_query = """SELECT nonce FROM nonces WHERE provider = %(provider)s"""
+    params["provider"] = provider_address
+
+    try:
+        rows = _execute_query(select_query, params, "get_nonce", get_rows=True)
+        if not rows:
+            logger.info("nonce is null")
+            return []
+        logger.info(f"nonce found: {max([float(row[0]) for row in rows])}")
+        return max([float(row[0]) for row in rows])
+    except (Exception, psycopg2.Error) as error:
+        logger.error(f"PG query error: {error}")
+        return
+
+
+def update_nonce_for_a_certain_provider(nonce: str, provider_address: str):
+    # check if provider address exists
+    params = dict()
+    select_query = """SELECT provider FROM nonces WHERE provider = %(provider)s"""
+    params["provider"] = provider_address
+
+    try:
+        rows = _execute_query(select_query, params, "get_provider", get_rows=True)
+        if not rows:
+            # creates a new row if necessary
+            postgres_insert_query = (
+                """INSERT INTO nonces (provider, nonce) VALUES (%s, %s)"""
+            )
+            record_to_insert = (
+                provider_address,
+                nonce,
+            )
+
+            try:
+                _execute_query(postgres_insert_query, record_to_insert, "create_nonce")
+                logger.debug(f"create_nonce: {provider_address}, new nonce {nonce}")
+                return
+            except (Exception, psycopg2.Error) as error:
+                logger.error(f"PG query error from creating nonce row: {error}")
+                return
+    except (Exception, psycopg2.Error) as error:
+        logger.error(f"PG query error from getting the provider address: {error}")
+        return
+
+    postgres_insert_query = """UPDATE nonces SET nonce=%s WHERE provider=%s"""
+    record_to_insert = (
+        nonce,
+        provider_address,
+    )
+
+    return _execute_query(postgres_insert_query, record_to_insert, "update_nonce")
+
+
 def get_sql_environments(logger):
     params = dict()
     select_query = """
