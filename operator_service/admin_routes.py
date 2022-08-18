@@ -101,6 +101,15 @@ def init_pgsql_compute():
         $function$;
         """
         cursor.execute(create_table_query)
+        # create table to store nonce for each provider address
+        create_table_query = """
+        CREATE TABLE IF NOT EXISTS nonces
+        (
+                provider         varchar(255) NOT NULL,
+                nonce            varchar(255)
+        );
+        """
+        cursor.execute(create_table_query)
         connection.commit()
     except (Exception, psycopg2.Error) as error:
         output = output + "Error PostgreSQL:" + str(error)
