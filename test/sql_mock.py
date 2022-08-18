@@ -28,7 +28,9 @@ class SQLMock:
         assert owner == SQLMock.expected_owner
 
     @staticmethod
-    def mock_create_sql_job(agreement_id, job_id, owner):
+    def mock_create_sql_job(
+        agreement_id, job_id, owner, body, environment, provider_address
+    ):
         SQLMock.assert_expected_params(agreement_id, job_id, owner)
 
     @staticmethod
