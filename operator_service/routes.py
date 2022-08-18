@@ -161,6 +161,28 @@ def start_compute_job():
         )
 
     workflow["chainId"] = data.get("chainId")
+
+    try:
+        active_jobs = get_sql_running_jobs()
+        logger.info(f"active_jobs: {active_jobs}")
+        for job in active_jobs:
+            if job["agreementId"] == agreement_id:
+                return Response(
+                    json.dumps(
+                        {"error": f"`agreementId` already in use for other job."}
+                    ),
+                    400,
+                    headers=standard_headers,
+                )
+    except ApiException as e:
+        msg = f"Error getting the active jobs for initializing a compute job: {e}"
+        logger.error(msg)
+        return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
+    except Exception as e:
+        msg = f"{e}"
+        logger.error(msg)
+        return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
+
     environment = data.get("environment")
     if not check_environment_exists(environment, workflow["chainId"]):
         logger.error(f"Environment invalid or does not exist")
