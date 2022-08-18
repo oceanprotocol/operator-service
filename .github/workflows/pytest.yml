@@ -31,3 +31,7 @@ jobs:
           coverage run --source operator_service -m pytest
           coverage report
           coverage xml
+      - name: Publish code coverage
+        uses: paambaati/codeclimate-action@v2.7.5
+        env:
+          CC_TEST_REPORTER_ID: a750efa066162b16d709e73a9717960a3bc5e9e2c2275a5b2ada6c9eea528123 
