@@ -140,7 +140,9 @@ def test_delete_compute_job(client, monkeypatch):
 
 def test_get_compute_job_status(client, monkeypatch, setup_mocks):
     with monkeypatch.context() as m:
-        m.setattr(SQLMock, "expected_agreement_id", "fake-agreement-id")
+        m.setattr(
+            SQLMock, "expected_agreement_id", "fake-agreement-id", "fake-chain-id"
+        )
         with patch(
             "operator_service.routes.check_environment_exists", side_effect=[True]
         ):
@@ -148,7 +150,6 @@ def test_get_compute_job_status(client, monkeypatch, setup_mocks):
                 COMPUTE_URL,
                 json=decorate_nonce({"agreementId": SQLMock.expected_agreement_id}),
             )
-
     assert response.status_code == 200
     assert response.json == MOCK_JOB_STATUS
 

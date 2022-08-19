@@ -9,7 +9,7 @@ logger = logging.getLogger("operator-service")
 logger.setLevel(logging.DEBUG)
 
 
-def get_sql_status(agreement_id, job_id, owner):
+def get_sql_status(agreement_id, job_id, owner, chain_id):
     # enforce strings
     params = dict()
     select_query = """
@@ -64,6 +64,9 @@ def get_sql_status(agreement_id, job_id, owner):
         temprow["stopreq"] = row[12]
         temprow["removed"] = row[13]
         workflow_dict = json.loads(row[14])
+        if chain_id and "chainId" in workflow_dict:
+            if chain_id != workflow_dict["chain_id"]:
+                continue
         stage = workflow_dict["spec"]["metadata"]["stages"][0]
         if "id" in stage["algorithm"]:
             temprow["algoDID"] = stage["algorithm"]["id"]
@@ -143,6 +146,8 @@ def get_sql_running_jobs():
         temprow["namespace"] = row[6]
         workflow_dict = json.loads(row[7])
         stage = workflow_dict["spec"]["metadata"]["stages"][0]
+        if "chainId" in workflow_dict:
+            temprow["chainId"] = workflow_dict["chainId"]
         if "id" in stage["algorithm"]:
             temprow["algoDID"] = stage["algorithm"]["id"]
         else:
@@ -210,7 +215,7 @@ def update_nonce_for_a_certain_provider(nonce: str, provider_address: str):
     return _execute_query(postgres_insert_query, record_to_insert, "update_nonce")
 
 
-def get_sql_environments(logger):
+def get_sql_environments(logger, chain_id):
     params = dict()
     select_query = """
     SELECT namespace, status,extract(epoch from lastping) as lastping from envs
@@ -221,13 +226,18 @@ def get_sql_environments(logger):
         return result
     for row in rows:
         temprow = json.loads(row[1])
+        if "allowedChainId" in temprow:
+            if isinstance(temprow["allowedChainId"], list):
+                if len(temprow["allowedChainId"]):
+                    if not (chain_id in temprow["allowedChainId"]):
+                        continue
         temprow["lastSeen"] = str(row[2])
         temprow["id"] = row[0]
         result.append(temprow)
     return result
 
 
-def check_environment_exists(environment):
+def check_environment_exists(environment, chain_id):
     params = dict()
     select_query = """
     SELECT namespace, status,extract(epoch from lastping) as lastping from envs WHERE namespace=%(env)s
@@ -238,8 +248,14 @@ def check_environment_exists(environment):
     )
     if not rows:
         return False
-    else:
-        return True
+
+    status = json.loads(rows[0][1])
+    if "allowedChainId" in status:
+        if isinstance(status["allowedChainId"], list):
+            if len(status["allowedChainId"]):
+                if not (chain_id in status["allowedChainId"]):
+                    return False
+    return True
 
 
 def create_sql_job(agreement_id, job_id, owner, body, namespace, provider_address):

@@ -47,6 +47,6 @@ class SQLMock:
         SQLMock.removed_jobs.append(job)
 
     @staticmethod
-    def mock_get_sql_status(agreement_id, job_id, owner):
+    def mock_get_sql_status(agreement_id, job_id, owner, chain_id):
         SQLMock.assert_expected_params(agreement_id, job_id, owner)
         return MOCK_JOB_STATUS
