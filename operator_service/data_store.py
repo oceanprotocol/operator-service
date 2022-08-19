@@ -295,7 +295,7 @@ def get_pg_connection_and_cursor():
             user=os.getenv("POSTGRES_USER"),
             password=os.getenv("POSTGRES_PASSWORD"),
             host=os.getenv("POSTGRES_HOST"),
-            port=os.getenv("POSTGRES_PORT"),
+            port=os.getenv("POSTGRES_PORT", 5432),
             database=os.getenv("POSTGRES_DB"),
         )
         connection.set_client_encoding("LATIN9")
@@ -310,7 +310,6 @@ def _execute_query(query, record, msg, get_rows=False):
     connection, cursor = get_pg_connection_and_cursor()
     if not connection or not cursor:
         return
-
     try:
         cursor.execute(query, record)
         if get_rows:

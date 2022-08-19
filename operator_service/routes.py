@@ -317,7 +317,10 @@ def stop_compute_job():
             logger.info(f"Stopping job : {name}")
             stop_sql_job(name)
 
-        status_list = get_sql_status(agreement_id, job_id, owner, chain_id)
+        status_list = sanitize_response_for_provider(
+            get_sql_status(agreement_id, job_id, owner, chain_id)
+        )
+
         return Response(json.dumps(status_list), 200, headers=standard_headers)
 
     except ApiException as e:
@@ -469,7 +472,7 @@ def get_running_jobs():
         description: Get correctly the status
     """
     try:
-        api_response = get_sql_running_jobs()
+        api_response = sanitize_response_for_provider(get_sql_running_jobs())
         return Response(json.dumps(api_response), 200, headers=standard_headers)
     except ApiException as e:
         msg = f"Error getting the status: {e}"
