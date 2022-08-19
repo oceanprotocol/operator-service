@@ -16,7 +16,7 @@ def client():
     yield client
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def setup_mocks(monkeypatch):
     from .kube_mock import KubeAPIMock
     from .sql_mock import SQLMock
