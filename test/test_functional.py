@@ -20,8 +20,15 @@ def test_operator(client):
     assert response.json["software"] == Metadata.TITLE
 
 
-def test_start_compute_job(client):
-    client.post(f"{API_URL}/pgsqlinit")
+def test_start_compute_job(client, monkeypatch):
+    monkeypatch.setenv(
+        "ALLOWED_ADMINS", '["0x6d39a833d1a6789aeca50db85cb830bc08319f45"]'
+    )
+    # Test with the right admin
+    headers = {"Admin": "0x6d39a833d1a6789aeca50db85cb830bc08319f45"}
+
+    client.post(f"{API_URL}/pgsqlinit", headers=headers)
+
     connection, cursor = get_pg_connection_and_cursor()
     cursor.execute("TRUNCATE jobs")
     cursor.execute("TRUNCATE envs")
