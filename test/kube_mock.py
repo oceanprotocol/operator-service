@@ -1,9 +1,9 @@
 from copy import deepcopy
 
 import kubernetes
-
 from operator_service.config import Config
 from operator_service.utils import create_compute_job, get_compute_resources
+
 from .conftest import FAKE_UUID
 from .operator_payloads import VALID_COMPUTE_BODY
 from .sql_mock import MOCK_JOBS_LIST
