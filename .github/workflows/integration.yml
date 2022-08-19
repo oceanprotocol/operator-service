@@ -22,10 +22,6 @@ jobs:
         with:
           repository: 'oceanprotocol/barge'
           path: 'barge'
-<<<<<<< HEAD
-          ref: main
-=======
->>>>>>> v4main
       - name: Checkout Operator-Engine
         uses: actions/checkout@v2
         with:
