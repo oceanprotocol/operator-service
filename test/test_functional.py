@@ -1,10 +1,12 @@
 import random
 import string
+import time
 from unittest.mock import patch
 
 from web3 import Web3
 
 from operator_service.constants import BaseURLs, Metadata
+from operator_service.data_store import get_pg_connection_and_cursor
 
 from . import operator_payloads as payloads
 from .utils import decorate_nonce
@@ -18,17 +20,19 @@ def test_operator(client):
     assert response.json["software"] == Metadata.TITLE
 
 
-# TODO: make environment and remove patch
 def test_start_compute_job(client):
     client.post(f"{API_URL}/pgsqlinit")
+    connection, cursor = get_pg_connection_and_cursor()
+    cursor.execute("TRUNCATE jobs")
+    cursor.execute("TRUNCATE envs")
+    cursor.execute("INSERT INTO envs(namespace) VALUES('ocean-compute')")
+    connection.commit()
 
     req_body = payloads.VALID_COMPUTE_BODY
     req_body["agreementId"] = print("".join(random.choices(string.ascii_letters, k=10)))
     req_body = decorate_nonce(req_body)
 
-    with patch("operator_service.routes.check_environment_exists", side_effect=[True]):
-        start_compute_response = client.post(COMPUTE_URL, json=req_body)
-
+    start_compute_response = client.post(COMPUTE_URL, json=req_body)
     assert start_compute_response.status_code == 200
     start_compute = start_compute_response.json
     assert len(start_compute) == 1
@@ -66,5 +70,40 @@ def test_start_compute_job(client):
     assert compute_status[0]["inputDID"][0] == start_compute[0]["inputDID"][0]
     assert int(float(compute_status[0]["dateCreated"])) == int(float(req_body["nonce"]))
 
+    # Get running jobs
+    get_environments_response = client.get(f"{API_URL}/runningjobs")
+    assert get_environments_response.status_code == 200
+    get_env_status = get_environments_response.json
+    assert len(get_env_status) == 1
+    assert get_env_status[0]["agreementId"]
+    assert get_env_status[0]["jobId"]
+    assert get_env_status[0]["owner"] == req_body["owner"]
+    assert get_env_status[0]["statusText"] == "Warming up"
+    assert get_env_status[0]["algoDID"] == start_compute[0]["algoDID"]
+    assert get_env_status[0]["inputDID"][0] == start_compute[0]["inputDID"][0]
+    assert int(float(get_env_status[0]["dateCreated"])) == int(float(req_body["nonce"]))
 
-# TODO: add rest of salvage tests
+    # Stop compute job
+    req_body = decorate_nonce(
+        {
+            "owner": start_compute[0]["owner"],
+            "jobId": start_compute[0]["jobId"],
+        }
+    )
+    stop_compute_response = client.put(f"{API_URL}/compute", json=req_body)
+    assert stop_compute_response.status_code == 200
+    stop_compute = stop_compute_response.json
+    assert len(stop_compute) == 1
+    assert stop_compute[0]["stopreq"] == 1
+
+    time.sleep(5)
+    # Delete compute job
+    req_body = decorate_nonce(
+        {
+            "agreementId": start_compute[0]["agreementId"],
+            "owner": start_compute[0]["owner"],
+            "jobId": start_compute[0]["jobId"],
+        }
+    )
+    delete_compute_response = client.delete(f"{API_URL}/compute", json=req_body)
+    assert delete_compute_response.status_code == 200
