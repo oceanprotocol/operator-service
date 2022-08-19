@@ -1,3 +1,4 @@
+import json
 import random
 import string
 import time
@@ -25,7 +26,10 @@ def test_start_compute_job(client):
     connection, cursor = get_pg_connection_and_cursor()
     cursor.execute("TRUNCATE jobs")
     cursor.execute("TRUNCATE envs")
-    cursor.execute("INSERT INTO envs(namespace) VALUES('ocean-compute')")
+    insert_query = """
+        INSERT INTO envs(namespace, status) VALUES('ocean-compute', '{"allowedChainId":1}')
+    """
+    cursor.execute(insert_query)
     connection.commit()
 
     req_body = payloads.VALID_COMPUTE_BODY
