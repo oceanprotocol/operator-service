@@ -24,7 +24,6 @@ def test_start_compute_job(client, monkeypatch):
     monkeypatch.setenv(
         "ALLOWED_ADMINS", '["0x6d39a833d1a6789aeca50db85cb830bc08319f45"]'
     )
-    # Test with the right admin
     headers = {"Admin": "0x6d39a833d1a6789aeca50db85cb830bc08319f45"}
 
     client.post(f"{API_URL}/pgsqlinit", headers=headers)
