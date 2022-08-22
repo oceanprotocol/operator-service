@@ -95,9 +95,26 @@ You can find complete tutorials and docs for all these tools:
 * https://minikube.sigs.k8s.io/docs/start/
 
 
-#### Running the Service
+#### Installing and configuring the PostgreSQL database
 
 The service also depends on postgresql, so make sure you install the dependencies e.g. `sudo apt-get install libpq-dev` in Ubuntu.
+Create a database and configure the environment variables per your configuration, e.g.:
+
+```
+export POSTGRES_USER=myuser
+export POSTGRES_PASSWORD=mypass
+export POSTGRES_HOST=localhost
+export POSTGRES_DB=mydb
+```
+
+When running the Operator Service server for the first time, you will have to perform a database initialisation.
+For that purpose, configure an Admin secret as an environment variable:
+
+```
+export ALLOWED_ADMINS=["myAdminSecret"]
+```
+
+#### Running the Service
 
 In the project directory, create a virtual environment (if you don't have it already), activate it and install the dependencies (just once).
 
@@ -113,6 +130,18 @@ Once you have Kubectl able to connect you your K8s cluster and Python dependenci
 export FLASK_APP=operator_service/run.py
 flask run --host=0.0.0.0 --port 8050
 ```
+
+If it is your first time running the Operator Service server, you need to initialise the PostgreSQL database. You only have to do this once.
+With the service running, set the "Admin" header to an allowed Admin secret, and use curl or Python to perform the pgsqlinit request.
+Here is an example with Python:
+
+```
+import requests
+headers = {"Admin": "myAdminSecret"}
+requests.post(f"{API_URL}/pgsqlinit", headers=headers)
+```
+
+This will create the database structure needed by the service endpoints.
 
 Having the server running you can find the complete Swagger API documentation here:
 
@@ -139,6 +168,7 @@ $ curl -X GET "http://localhost:8050/api/v1/operator/list" -H "accept: applicati
      POSTGRES_PORT = Postgresql port
      SIGNATURE_REQUIRED = 0 -> no signature required, 1 -> request brizo signature
      ALLOWED_PROVIDERS = Json array with allowed providers that can access the endpoints
+     ALLOWED_ADMINS = Array with allowed admins that can access the admin routes.
      OPERATOR_ADDRESS = Address used by Compute environment (IMPORTANT: Corresponding private key must be set in operator-engine env)
      DEFAULT_NAMESPACE = namespace which will run the jobs
      X-API-KEY = if defined, when downloading a compute output, will add X-API-KEY header (used for IPFS auth)

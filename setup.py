@@ -21,6 +21,7 @@ install_requirements = [
     "Flask-Cors==3.0.9",
     "flask-swagger==0.2.14",
     "flask-swagger-ui==3.20.9",
+    "flask-headers",
     "Jinja2>=2.10.1,<3.1",
     "kubernetes==10.0.0",
     "requests>=2.21.0",

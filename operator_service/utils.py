@@ -243,3 +243,23 @@ def sanitize_response_for_provider(d):
         return [sanitize_response_for_provider(element) for element in d]
     else:
         return d
+
+
+def check_admin(admin):
+    allowed_admins = json.loads(os.environ["ALLOWED_ADMINS"])
+    logger.info(f"allowed admins: {allowed_admins}")
+    logger.info(f'{os.environ["ALLOWED_ADMINS"]}')
+
+    if not admin:
+        msg = f"Admin header is empty."
+        logger.error(f"msg: {msg}")
+        return msg, 400
+
+    if admin.lower() not in [x.lower() for x in allowed_admins]:
+        msg = f"Access admin route failed due to invalid admin address."
+        logger.error(msg)
+        return msg, 401
+
+    logger.info("Valid admin.")
+    msg = "Valid admin."
+    return msg, 200
