@@ -255,7 +255,7 @@ def check_admin(admin):
         logger.error(f"msg: {msg}")
         return msg, 400
 
-    if admin.lower() not in allowed_admins:
+    if admin.lower() not in [x.lower() for x in allowed_admins]:
         msg = f"Access admin route failed due to invalid admin address."
         logger.error(msg)
         return msg, 401
