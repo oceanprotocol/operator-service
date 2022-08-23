@@ -13,6 +13,14 @@ from operator_service.routes import services
 from operator_service.admin_routes import adminpg_services
 
 
+@app.after_request
+def apply_headers(response):
+    response.headers["Content-type"] = "application/json"
+    response.headers["Connection"] = "close"
+
+    return response
+
+
 def get_version():
     conf = configparser.ConfigParser()
     conf.read(".bumpversion.cfg")

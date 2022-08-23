@@ -1,3 +1,5 @@
+import random
+import string
 from unittest.mock import patch
 
 from operator_service.constants import BaseURLs, Metadata
@@ -17,6 +19,9 @@ def test_operator(client):
 
 
 def test_start_compute_job(client, monkeypatch, setup_mocks):
+    payloads.VALID_COMPUTE_BODY["agreementId"] = "".join(
+        random.choices(string.ascii_letters, k=10)
+    )
     monkeypatch.setattr(
         SQLMock, "expected_agreement_id", payloads.VALID_COMPUTE_BODY["agreementId"]
     )
@@ -40,30 +45,35 @@ def test_start_compute_job(client, monkeypatch, setup_mocks):
 
     response = client.post(COMPUTE_URL, json={})
     assert response.status_code == 400
-    assert response.json["error"] == "payload seems empty."
+    assert "agreementId" in response.json["errors"]
+    assert "chainId" in response.json["errors"]
+    assert "workflow" in response.json["errors"]
+    assert "workflow.stages" in response.json["errors"]
 
     response = client.post(
         COMPUTE_URL, json=decorate_nonce(payloads.NO_WORKFLOW_COMPUTE_BODY)
     )
     assert response.status_code == 400
-    assert (
-        response.json["error"]
-        == "`workflow` is required in the payload and must include workflow stages"
-    )
+    assert "workflow" in response.json["errors"]
+    assert "workflow.stages" in response.json["errors"]
 
     with patch("operator_service.routes.check_environment_exists", side_effect=[True]):
         response = client.post(
             COMPUTE_URL, json=decorate_nonce(payloads.NO_STAGES_COMPUTE_BODY)
         )
     assert response.status_code == 400
-    assert response.json["error"] == "Missing stages"
+    assert "workflow" not in response.json["errors"]
+    assert "workflow.stages" in response.json["errors"]
 
     with patch("operator_service.routes.check_environment_exists", side_effect=[True]):
         response = client.post(
             COMPUTE_URL, json=decorate_nonce(payloads.INVALID_STAGE_COMPUTE_BODY)
         )
     assert response.status_code == 400
-    assert response.json["error"] == "Missing algorithm in stage 0"
+    assert (
+        response.json["errors"]["workflow.stages"][0]
+        == "Missing attributes algorithm, compute, input or ouput in first stage"
+    )
 
     monkeypatch.setenv("ALGO_POD_TIMEOUT", str(1200))
     monkeypatch.setattr(KubeAPIMock, "expected_maxtime", 1200)

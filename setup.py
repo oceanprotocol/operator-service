@@ -31,6 +31,7 @@ install_requirements = [
     "simplejson>=3.13.2",
     "psycopg2>=2.8.4",
     "cryptography==37.0.4",
+    "flask-sieve==2.0.1",
 ]
 
 setup_requirements = [

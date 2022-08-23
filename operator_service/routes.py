@@ -1,38 +1,40 @@
+import json
+import logging
 import os
 from os import path
-import logging
-import json
 
-import kubernetes
-from flask import Blueprint, request, Response
+from flask import Blueprint, Response, request
+from flask_sieve import validate
 from kubernetes.client.rest import ApiException
-
-from operator_service.config import Config
-from operator_service.data_store import (
-    create_sql_job,
-    get_sql_status,
-    get_sql_jobs,
-    stop_sql_job,
-    remove_sql_job,
-    get_sql_running_jobs,
-    get_sql_job_urls,
-    get_sql_environments,
-    check_environment_exists,
-    get_job_by_provider_and_owner,
-)
-from operator_service.kubernetes_api import KubeAPI
-from operator_service.utils import (
-    create_compute_job,
-    check_required_attributes,
-    sanitize_response_for_provider,
-    generate_new_id,
-    process_provider_signature_validation,
-    get_compute_resources,
-    get_namespace_configs,
-    build_download_response,
-)
 from requests.adapters import HTTPAdapter
 from requests.sessions import Session
+
+import kubernetes
+from operator_service.config import Config
+from operator_service.data_store import (
+    check_environment_exists,
+    create_sql_job,
+    get_job_by_provider_and_owner,
+    get_sql_environments,
+    get_sql_job_urls,
+    get_sql_jobs,
+    get_sql_running_jobs,
+    get_sql_status,
+    remove_sql_job,
+    stop_sql_job,
+)
+from operator_service.kubernetes_api import KubeAPI
+from operator_service.operator_requests import StartRequest
+from operator_service.utils import (
+    build_download_response,
+    check_required_attributes,
+    create_compute_job,
+    generate_new_id,
+    get_compute_resources,
+    get_namespace_configs,
+    process_provider_signature_validation,
+    sanitize_response_for_provider,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +52,7 @@ config = Config()
 
 
 @services.route("/compute", methods=["POST"])
+@validate(StartRequest)
 def start_compute_job():
     """
     Create and start the compute job
@@ -133,65 +136,14 @@ def start_compute_job():
     """
 
     data = request.args if request.args else request.json
-    required_attributes = [
-        "workflow",
-        "agreementId",
-        "owner",
-        "providerSignature",
-        "environment",
-        "nonce",
-    ]
-    msg, status = check_required_attributes(required_attributes, data, "POST:/compute")
-    if msg:
-        return Response(json.dumps({"error": msg}), status, headers=standard_headers)
 
     workflow = data.get("workflow")
     agreement_id = data.get("agreementId")
     owner = data.get("owner")
     nonce = data.get("nonce")
-    if not workflow:
-        return Response(
-            json.dumps(
-                {
-                    "error": f"`workflow` is required in the payload and must "
-                    f"include workflow stages"
-                }
-            ),
-            400,
-            headers=standard_headers,
-        )
-
     workflow["chainId"] = data.get("chainId")
-
-    try:
-        active_jobs = get_sql_running_jobs()
-        logger.info(f"active_jobs: {active_jobs}")
-        for job in active_jobs:
-            if job["agreementId"] == agreement_id:
-                return Response(
-                    json.dumps(
-                        {"error": f"`agreementId` already in use for other job."}
-                    ),
-                    400,
-                    headers=standard_headers,
-                )
-    except ApiException as e:
-        msg = f"Error getting the active jobs for initializing a compute job: {e}"
-        logger.error(msg)
-        return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
-    except Exception as e:
-        msg = f"{e}"
-        logger.error(msg)
-        return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
-
     environment = data.get("environment")
-    if not check_environment_exists(environment, workflow["chainId"]):
-        logger.error(f"Environment invalid or does not exist")
-        return Response(
-            json.dumps({"error": "Environment invalid or does not exist"}),
-            400,
-            headers=standard_headers,
-        )
+
     # verify provider's signature
     msg, status, provider_address = process_provider_signature_validation(
         data.get("providerSignature"), f"{owner}", nonce
@@ -199,27 +151,6 @@ def start_compute_job():
     if msg:
         return Response(json.dumps({"error": msg}), status, headers=standard_headers)
 
-    stages = workflow.get("stages")
-    if not stages:
-        logger.error(f"Missing stages")
-        return Response(
-            json.dumps({"error": "Missing stages"}), 400, headers=standard_headers
-        )
-    if len(stages) > 1:
-        logger.error(f"Multiple stages are not supported yet")
-        return Response(
-            json.dumps({"error": "Multiple stages are not supported yet"}),
-            400,
-            headers=standard_headers,
-        )
-    for _attr in ("algorithm", "compute", "input", "output"):
-        if _attr not in stages[0]:
-            logger.error(f"Missing {_attr} in stage 0")
-            return Response(
-                json.dumps({"error": f"Missing {_attr} in stage 0"}),
-                400,
-                headers=standard_headers,
-            )
     job_id = generate_new_id()
     logger.info(f"Got job_id: {job_id}")
     body = create_compute_job(

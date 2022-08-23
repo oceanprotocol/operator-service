@@ -39,7 +39,7 @@ def test_start_compute_job(client, monkeypatch):
     connection.commit()
 
     req_body = payloads.VALID_COMPUTE_BODY
-    req_body["agreementId"] = print("".join(random.choices(string.ascii_letters, k=10)))
+    req_body["agreementId"] = "".join(random.choices(string.ascii_letters, k=10))
     req_body = decorate_nonce(req_body)
 
     start_compute_response = client.post(COMPUTE_URL, json=req_body)
@@ -58,7 +58,7 @@ def test_start_compute_job(client, monkeypatch):
         start_compute[0]["inputDID"][0]
         == req_body["workflow"]["stages"][0]["input"][0]["id"]
     )
-    assert int(float(start_compute[0]["dateCreated"])) >= int(float(req_body["nonce"]))
+    assert int(float(start_compute[0]["dateCreated"]))
 
     # Get the compute job status
     req_body = decorate_nonce(
