@@ -3,10 +3,12 @@ import logging
 
 import psycopg2
 from flask import Blueprint, jsonify, request, Response
+from flask_headers import headers
 from kubernetes.client.rest import ApiException
 
 from operator_service.config import Config
 from operator_service.kubernetes_api import KubeAPI
+from operator_service.utils import check_admin
 
 adminpg_services = Blueprint("adminpg_services", __name__)
 admin_services = Blueprint("admin_services", __name__)
@@ -17,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 @adminpg_services.route("/pgsqlinit", methods=["POST"])
+@headers({"Admin": ""})
 def init_pgsql_compute():
     """
     Init pgsql database
@@ -27,6 +30,14 @@ def init_pgsql_compute():
       - application/json
     """
     output = ""
+    admin = request.headers.get("Admin")
+    logger.info(f"Admin {admin}")
+    msg, code = check_admin(admin)
+    logger.info(f"msg, code: {msg}, {code}")
+    if code != 200:
+        output = output + msg + "\nstatus code: " + str(code)
+        logger.error(output)
+        return output, code
     connection = None
     cursor = None
     try:
@@ -90,6 +101,15 @@ def init_pgsql_compute():
         $function$;
         """
         cursor.execute(create_table_query)
+        # create table to store nonce for each provider address
+        create_table_query = """
+        CREATE TABLE IF NOT EXISTS nonces
+        (
+                provider         varchar(255) NOT NULL,
+                nonce            varchar(255)
+        );
+        """
+        cursor.execute(create_table_query)
         connection.commit()
     except (Exception, psycopg2.Error) as error:
         output = output + "Error PostgreSQL:" + str(error)
@@ -139,6 +159,13 @@ def get_compute_job_info():
         required: true
         type: string
     """
+    output = ""
+    admin = request.headers.get("Admin")
+    msg, code = check_admin(admin)
+    if code != 200:
+        output = output + msg + "\nstatus code: " + str(code)
+        logger.error(output)
+        return output, code
     try:
         job_id = request.args["jobId"]
         api_response = KubeAPI(config).get_namespaced_custom_object(job_id)
@@ -159,6 +186,13 @@ def list_compute_jobs():
     consumes:
       - application/json
     """
+    output = ""
+    admin = request.headers.get("Admin")
+    msg, code = check_admin(admin)
+    if code != 200:
+        output = output + msg + "\nstatus code: " + str(code)
+        logger.error(output)
+        return output, code
     try:
         api_response = KubeAPI(config).list_namespaced_custom_object()
         result = list()
@@ -202,6 +236,13 @@ def get_logs():
       404:
         description: Pod not found for the given parameters
     """
+    output = ""
+    admin = request.headers.get("Admin")
+    msg, code = check_admin(admin)
+    if code != 200:
+        output = output + msg + "\nstatus code: " + str(code)
+        logger.error(output)
+        return output, code
     data = request.args
     kube_api = KubeAPI(config)
     try:

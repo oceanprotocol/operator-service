@@ -9,12 +9,12 @@ logger = logging.getLogger("operator-service")
 logger.setLevel(logging.DEBUG)
 
 
-def get_sql_status(agreement_id, job_id, owner):
+def get_sql_status(agreement_id, job_id, owner, chain_id):
     # enforce strings
     params = dict()
     select_query = """
-    SELECT agreementId, workflowId, owner, status, statusText, 
-        extract(epoch from dateCreated) as dateCreated, 
+    SELECT agreementId, workflowId, owner, status, statusText,
+        extract(epoch from dateCreated) as dateCreated,
         extract(epoch from dateFinished) as dateFinished,
         configlogURL, publishlogURL, algologURL, outputsURL, ddo, stopreq, removed , workflow
     FROM jobs WHERE 1=1
@@ -64,6 +64,9 @@ def get_sql_status(agreement_id, job_id, owner):
         temprow["stopreq"] = row[12]
         temprow["removed"] = row[13]
         workflow_dict = json.loads(row[14])
+        if chain_id and "chainId" in workflow_dict:
+            if chain_id != workflow_dict["chain_id"]:
+                continue
         stage = workflow_dict["spec"]["metadata"]["stages"][0]
         if "id" in stage["algorithm"]:
             temprow["algoDID"] = stage["algorithm"]["id"]
@@ -124,8 +127,8 @@ def get_sql_running_jobs():
     # enforce strings
     params = dict()
     select_query = """
-    SELECT agreementId, workflowId, owner, status, statusText, 
-        extract(epoch from dateCreated) as dateCreated, 
+    SELECT agreementId, workflowId, owner, status, statusText,
+        extract(epoch from dateCreated) as dateCreated,
         namespace,workflow FROM jobs WHERE dateFinished IS NULL
     """
     result = []
@@ -143,6 +146,8 @@ def get_sql_running_jobs():
         temprow["namespace"] = row[6]
         workflow_dict = json.loads(row[7])
         stage = workflow_dict["spec"]["metadata"]["stages"][0]
+        if "chainId" in workflow_dict:
+            temprow["chainId"] = workflow_dict["chainId"]
         if "id" in stage["algorithm"]:
             temprow["algoDID"] = stage["algorithm"]["id"]
         else:
@@ -155,7 +160,62 @@ def get_sql_running_jobs():
     return result
 
 
-def get_sql_environments(logger):
+def get_nonce_for_certain_provider(provider_address: str):
+    params = dict()
+    select_query = """SELECT nonce FROM nonces WHERE provider = %(provider)s"""
+    params["provider"] = provider_address
+
+    try:
+        rows = _execute_query(select_query, params, "get_nonce", get_rows=True)
+        if not rows:
+            logger.info("nonce is null")
+            return []
+        logger.info(f"nonce found: {max([float(row[0]) for row in rows])}")
+        return max([float(row[0]) for row in rows])
+    except (Exception, psycopg2.Error) as error:
+        logger.error(f"PG query error: {error}")
+        return
+
+
+def update_nonce_for_a_certain_provider(nonce: str, provider_address: str):
+    # check if provider address exists
+    params = dict()
+    select_query = """SELECT provider FROM nonces WHERE provider = %(provider)s"""
+    params["provider"] = provider_address
+
+    try:
+        rows = _execute_query(select_query, params, "get_provider", get_rows=True)
+        if not rows:
+            # creates a new row if necessary
+            postgres_insert_query = (
+                """INSERT INTO nonces (provider, nonce) VALUES (%s, %s)"""
+            )
+            record_to_insert = (
+                provider_address,
+                nonce,
+            )
+
+            try:
+                _execute_query(postgres_insert_query, record_to_insert, "create_nonce")
+                logger.debug(f"create_nonce: {provider_address}, new nonce {nonce}")
+                return
+            except (Exception, psycopg2.Error) as error:
+                logger.error(f"PG query error from creating nonce row: {error}")
+                return
+    except (Exception, psycopg2.Error) as error:
+        logger.error(f"PG query error from getting the provider address: {error}")
+        return
+
+    postgres_insert_query = """UPDATE nonces SET nonce=%s WHERE provider=%s"""
+    record_to_insert = (
+        nonce,
+        provider_address,
+    )
+
+    return _execute_query(postgres_insert_query, record_to_insert, "update_nonce")
+
+
+def get_sql_environments(logger, chain_id):
     params = dict()
     select_query = """
     SELECT namespace, status,extract(epoch from lastping) as lastping from envs
@@ -166,13 +226,18 @@ def get_sql_environments(logger):
         return result
     for row in rows:
         temprow = json.loads(row[1])
+        if "allowedChainId" in temprow:
+            if isinstance(temprow["allowedChainId"], list):
+                if len(temprow["allowedChainId"]):
+                    if not (chain_id in temprow["allowedChainId"]):
+                        continue
         temprow["lastSeen"] = str(row[2])
         temprow["id"] = row[0]
         result.append(temprow)
     return result
 
 
-def check_environment_exists(environment):
+def check_environment_exists(environment, chain_id):
     params = dict()
     select_query = """
     SELECT namespace, status,extract(epoch from lastping) as lastping from envs WHERE namespace=%(env)s
@@ -183,8 +248,14 @@ def check_environment_exists(environment):
     )
     if not rows:
         return False
-    else:
-        return True
+
+    status = json.loads(rows[0][1])
+    if "allowedChainId" in status:
+        if isinstance(status["allowedChainId"], list):
+            if len(status["allowedChainId"]):
+                if not (chain_id in status["allowedChainId"]):
+                    return False
+    return True
 
 
 def get_job_by_provider_and_owner(owner, provider):
@@ -218,10 +289,10 @@ def get_job_by_provider_and_owner(owner, provider):
 
 def create_sql_job(agreement_id, job_id, owner, body, namespace, provider_address):
     postgres_insert_query = """
-        INSERT 
-            INTO jobs 
-                (agreementId,workflowId,owner,status,statusText,workflow,namespace,provider) 
-            VALUES 
+        INSERT
+            INTO jobs
+                (agreementId,workflowId,owner,status,statusText,workflow,namespace,provider)
+            VALUES
                 (%s, %s, %s, %s, %s,%s,%s,%s)"""
     record_to_insert = (
         str(agreement_id),
@@ -254,7 +325,7 @@ def get_pg_connection_and_cursor():
             user=os.getenv("POSTGRES_USER"),
             password=os.getenv("POSTGRES_PASSWORD"),
             host=os.getenv("POSTGRES_HOST"),
-            port=os.getenv("POSTGRES_PORT"),
+            port=os.getenv("POSTGRES_PORT", 5432),
             database=os.getenv("POSTGRES_DB"),
         )
         connection.set_client_encoding("LATIN9")
@@ -269,7 +340,6 @@ def _execute_query(query, record, msg, get_rows=False):
     connection, cursor = get_pg_connection_and_cursor()
     if not connection or not cursor:
         return
-
     try:
         cursor.execute(query, record)
         if get_rows:

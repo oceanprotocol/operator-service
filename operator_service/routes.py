@@ -72,6 +72,7 @@ def start_compute_job():
                         "providerSignature":"0xc3e6de65bfa3527409d8df6232e084e3cea0bae3bc85f7401e98fac56f9706157e42089b4b2b45f0f019bc94e7e4806afe8c86a6bab9c616d5010891e0246e761c",
                         "environment":"ocean-compute",
                         "nonce": 1234,
+                        "chainId": "1",
                         "workflow":{
                             "stages": [
                               {
@@ -159,11 +160,35 @@ def start_compute_job():
             400,
             headers=standard_headers,
         )
+
+    workflow["chainId"] = data.get("chainId")
+
+    try:
+        active_jobs = get_sql_running_jobs()
+        logger.info(f"active_jobs: {active_jobs}")
+        for job in active_jobs:
+            if job["agreementId"] == agreement_id:
+                return Response(
+                    json.dumps(
+                        {"error": f"`agreementId` already in use for other job."}
+                    ),
+                    400,
+                    headers=standard_headers,
+                )
+    except ApiException as e:
+        msg = f"Error getting the active jobs for initializing a compute job: {e}"
+        logger.error(msg)
+        return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
+    except Exception as e:
+        msg = f"{e}"
+        logger.error(msg)
+        return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
+
     environment = data.get("environment")
-    if not check_environment_exists(environment):
-        logger.error(f"Environment invalid or does not exists")
+    if not check_environment_exists(environment, workflow["chainId"]):
+        logger.error(f"Environment invalid or does not exist")
         return Response(
-            json.dumps({"error": "Environment invalid or does not exists"}),
+            json.dumps({"error": "Environment invalid or does not exist"}),
             400,
             headers=standard_headers,
         )
@@ -205,7 +230,7 @@ def start_compute_job():
     create_sql_job(
         agreement_id, str(job_id), owner, body, environment, provider_address
     )
-    status_list = get_sql_status(agreement_id, str(job_id), owner)
+    status_list = get_sql_status(agreement_id, str(job_id), owner, workflow["chainId"])
 
     return Response(
         json.dumps(sanitize_response_for_provider(status_list)),
@@ -261,6 +286,7 @@ def stop_compute_job():
         agreement_id = data.get("agreementId", None)
         owner = data.get("owner", None)
         job_id = data.get("jobId", None)
+        chain_id = data.get("chainId", None)
         if not agreement_id or len(agreement_id) < 2:
             agreement_id = None
 
@@ -292,7 +318,10 @@ def stop_compute_job():
             logger.info(f"Stopping job : {name}")
             stop_sql_job(name)
 
-        status_list = get_sql_status(agreement_id, job_id, owner)
+        status_list = sanitize_response_for_provider(
+            get_sql_status(agreement_id, job_id, owner, chain_id)
+        )
+
         return Response(json.dumps(status_list), 200, headers=standard_headers)
 
     except ApiException as e:
@@ -382,6 +411,7 @@ def get_compute_job_status():
         agreement_id = data.get("agreementId", None)
         owner = data.get("owner", None)
         job_id = data.get("jobId", None)
+        chain_id = data.get("chainId", None)
 
         if not agreement_id or len(agreement_id) < 2:
             agreement_id = None
@@ -411,7 +441,7 @@ def get_compute_job_status():
                 json.dumps({"error": msg}), status, headers=standard_headers
             )
         logger.info(f"Got status request for {agreement_id}, {job_id}, {owner}")
-        api_response = get_sql_status(agreement_id, job_id, owner)
+        api_response = get_sql_status(agreement_id, job_id, owner, chain_id)
 
         return Response(
             json.dumps(sanitize_response_for_provider(api_response)),
@@ -443,7 +473,7 @@ def get_running_jobs():
         description: Get correctly the status
     """
     try:
-        api_response = get_sql_running_jobs()
+        api_response = sanitize_response_for_provider(get_sql_running_jobs())
         return Response(json.dumps(api_response), 200, headers=standard_headers)
     except ApiException as e:
         msg = f"Error getting the status: {e}"
@@ -572,7 +602,8 @@ def get_environments():
         description: Get correctly the status
     """
     try:
-        api_response = get_sql_environments(logger)
+        data = request.args if request.args else request.json
+        api_response = get_sql_environments(logger, data.get("chainId"))
         return Response(json.dumps(api_response), 200, headers=standard_headers)
     except Exception as e:
         msg = f"{e}"

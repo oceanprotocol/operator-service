@@ -11,6 +11,11 @@ from kubernetes.client.rest import ApiException
 from eth_keys import KeyAPI
 from eth_keys.backends import NativeECCBackend
 from flask import Response, request
+
+from operator_service.data_store import (
+    get_nonce_for_certain_provider,
+    update_nonce_for_a_certain_provider,
+)
 from operator_service.exceptions import InvalidSignatureError
 from web3 import Web3
 
@@ -82,13 +87,26 @@ def get_signer(signature, message):
 
 
 def process_provider_signature_validation(signature, original_msg, nonce):
-    if not signature or not original_msg:
-        return f"`providerSignature` of agreementId is required.", 400, None
-    original_msg = f"{original_msg}{nonce}"
     try:
         address = get_signer(signature, original_msg)
     except Exception as e:
         return "Failed to recover address", 400, None
+
+    db_nonce = get_nonce_for_certain_provider(address)
+
+    if db_nonce and float(nonce) <= float(db_nonce):
+        msg = (
+            f"Invalid signature expected nonce ({db_nonce}) > current nonce ({nonce})."
+        )
+        logger.error(msg)
+        raise InvalidSignatureError(msg)
+    else:
+        update_nonce_for_a_certain_provider(nonce, address)
+
+    if not signature or not original_msg:
+        return f"`providerSignature` of agreementId is required.", 400, None
+    original_msg = f"{original_msg}{nonce}"
+
     if is_verify_signature_required():
         # verify provider's signature
         allowed_providers = get_list_of_allowed_providers()
@@ -225,3 +243,23 @@ def sanitize_response_for_provider(d):
         return [sanitize_response_for_provider(element) for element in d]
     else:
         return d
+
+
+def check_admin(admin):
+    allowed_admins = json.loads(os.environ["ALLOWED_ADMINS"])
+    logger.info(f"allowed admins: {allowed_admins}")
+    logger.info(f'{os.environ["ALLOWED_ADMINS"]}')
+
+    if not admin:
+        msg = f"Admin header is empty."
+        logger.error(f"msg: {msg}")
+        return msg, 400
+
+    if admin.lower() not in [x.lower() for x in allowed_admins]:
+        msg = f"Access admin route failed due to invalid admin address."
+        logger.error(msg)
+        return msg, 401
+
+    logger.info("Valid admin.")
+    msg = "Valid admin."
+    return msg, 200

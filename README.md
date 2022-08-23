@@ -72,27 +72,76 @@ And later the Kubectl tool:
 $ curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl
 $ chmod +x ./kubectl
 $ sudo mv ./kubectl /usr/local/bin/kubectl
-$ kubectl version
-Client Version: version.Info{Major:"1", Minor:"15", GitVersion:"v1.15.3", GitCommit:"2d3c76f9091b6bec110a5e63777c332469e0cba2", GitTreeState:"clean", BuildDate:"2019-08-19T11:13:54Z", GoVersion:"go1.12.9", Compiler:"gc", Platform:"linux/amd64"}
 ```
 
-To connect to your specific Kubernetes cluster you need to setup the `~/.kube/config` file with your environment setup.
+At this point, running `kubectl version` will output the installed version, but if you do not have a running cluster, then it will show a warning.
 
-You can find the complete tutorials here:
+To run a cluster, there are various options. One of them is to install `minikube`. The instructions may differ (see https://minikube.sigs.k8s.io/docs/start/) but it should look something like this:
+
+```
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+```
+
+Run `minikube start` taking care not to be in a root account.
+
+Check your setup by running `kubectl config view` and inspecting the output. It should match your configured cluster(s).
+
+You can find complete tutorials and docs for all these tools:
 
 * https://aws.amazon.com/cli/
 * https://kubernetes.io/docs/tasks/tools/install-kubectl/
 * https://docs.aws.amazon.com/eks/latest/userguide/install-aws-iam-authenticator.html
+* https://minikube.sigs.k8s.io/docs/start/
 
+
+#### Installing and configuring the PostgreSQL database
+
+The service also depends on postgresql, so make sure you install the dependencies e.g. `sudo apt-get install libpq-dev` in Ubuntu.
+Create a database and configure the environment variables per your configuration, e.g.:
+
+```
+export POSTGRES_USER=myuser
+export POSTGRES_PASSWORD=mypass
+export POSTGRES_HOST=localhost
+export POSTGRES_DB=mydb
+```
+
+When running the Operator Service server for the first time, you will have to perform a database initialisation.
+For that purpose, configure an Admin secret as an environment variable:
+
+```
+export ALLOWED_ADMINS=["myAdminSecret"]
+```
 
 #### Running the Service
 
-Once you have Kubectl able to connect you your K8s cluster, run the service is as simple as running the following commands:
+In the project directory, create a virtual environment (if you don't have it already), activate it and install the dependencies (just once).
 
+```
+virtualenv venv
+source venv/bin/activate
+pip install -r requirements_dev.txt
+```
 
-`export FLASK_APP=operator_service/run.py`
+Once you have Kubectl able to connect you your K8s cluster and Python dependencies installed, simply run the service:
 
-`flask run --host=0.0.0.0 --port 8050`
+```
+export FLASK_APP=operator_service/run.py
+flask run --host=0.0.0.0 --port 8050
+```
+
+If it is your first time running the Operator Service server, you need to initialise the PostgreSQL database. You only have to do this once.
+With the service running, set the "Admin" header to an allowed Admin secret, and use curl or Python to perform the pgsqlinit request.
+Here is an example with Python:
+
+```
+import requests
+headers = {"Admin": "myAdminSecret"}
+requests.post(f"{API_URL}/pgsqlinit", headers=headers)
+```
+
+This will create the database structure needed by the service endpoints.
 
 Having the server running you can find the complete Swagger API documentation here:
 
@@ -119,6 +168,7 @@ $ curl -X GET "http://localhost:8050/api/v1/operator/list" -H "accept: applicati
      POSTGRES_PORT = Postgresql port
      SIGNATURE_REQUIRED = 0 -> no signature required, 1 -> request brizo signature
      ALLOWED_PROVIDERS = Json array with allowed providers that can access the endpoints
+     ALLOWED_ADMINS = Array with allowed admins that can access the admin routes.
      OPERATOR_ADDRESS = Address used by Compute environment (IMPORTANT: Corresponding private key must be set in operator-engine env)
      DEFAULT_NAMESPACE = namespace which will run the jobs
      X-API-KEY = if defined, when downloading a compute output, will add X-API-KEY header (used for IPFS auth)

@@ -1,9 +1,11 @@
 from copy import deepcopy
 
+from eth_account import Account
+
 VALID_COMPUTE_BODY = {
     "agreementId": "0x0",
     "owner": "0xC41808BBef371AD5CFc76466dDF9dEe228d2BdAA",
-    "providerSignature": "sig",
+    "environment": "ocean-compute",
     "workflow": {
         "stages": [
             {
@@ -59,3 +61,7 @@ del INVALID_STAGE_COMPUTE_BODY["workflow"]["stages"][0]["algorithm"]
 
 VALID_COMPUTE_BODY_WITH_NO_MAXTIME = deepcopy(VALID_COMPUTE_BODY)
 del VALID_COMPUTE_BODY_WITH_NO_MAXTIME["workflow"]["stages"][0]["compute"]["maxtime"]
+
+VALID_WALLET = Account.from_key(
+    "0x1f990f8b013fc5c7955e0f8746f11ded231721b9cf3f99ff06cdc03492b28090"
+)
