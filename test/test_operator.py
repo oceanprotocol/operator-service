@@ -75,6 +75,15 @@ def test_start_compute_job(client, monkeypatch, setup_mocks):
         == "Missing attributes algorithm, compute, input or ouput in first stage"
     )
 
+    invalid_compute_body = decorate_nonce(payloads.VALID_COMPUTE_BODY)
+    invalid_compute_body["providerSignature"] = "someRandomSignature"
+    with patch("operator_service.routes.check_environment_exists", side_effect=[True]):
+        response = client.post(COMPUTE_URL, json=invalid_compute_body)
+    assert response.status_code == 400
+    assert response.json["errors"]["providerSignature"] == [
+        "Invalid providerSignature."
+    ]
+
     monkeypatch.setenv("ALGO_POD_TIMEOUT", str(1200))
     monkeypatch.setattr(KubeAPIMock, "expected_maxtime", 1200)
 

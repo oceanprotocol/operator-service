@@ -8,6 +8,7 @@ from kubernetes.client.rest import ApiException
 
 from operator_service.data_store import (check_environment_exists,
                                          get_sql_running_jobs)
+from operator_service.utils import process_provider_signature_validation
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ class CustomJsonRequest(JsonRequest):
                     "environment.environment_exists": "Environment invalid or does not exist",
                     "workflow.stages.stage_length": "Multiple stages are not supported yet",
                     "workflow.stages.stage_format": "Missing attributes algorithm, compute, input or ouput in first stage",
+                    "providerSignature.signature": "Invalid providerSignature.",
                 },
                 request=request,
                 headers=headers,
@@ -109,6 +111,14 @@ class CustomRulesProcessor(RulesProcessor):
 
             return True
 
+    def validate_signature(self, value, params, **kwargs):
+        owner = params[0]
+        nonce = params[1]
+
+        msg, _, _ = process_provider_signature_validation(value, f"{owner}", nonce)
+
+        return not msg
+
 
 class StartRequest(CustomJsonRequest):
     def rules(self):
@@ -117,8 +127,8 @@ class StartRequest(CustomJsonRequest):
             "workflow.stages": ["required", "stage_length", "stage_format"],
             "chainId": ["required"],
             "agreementId": ["bail", "required", "not_in_use"],
-            "owner": ["required"],
+            "owner": ["bail", "required"],
             "environment": ["required", "environment_exists:chainId"],
-            "providerSignature": ["required"],
+            "providerSignature": ["bail", "required", "signature:owner,nonce"],
             "nonce": ["required"],
         }

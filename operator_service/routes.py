@@ -144,12 +144,9 @@ def start_compute_job():
     workflow["chainId"] = data.get("chainId")
     environment = data.get("environment")
 
-    # verify provider's signature
-    msg, status, provider_address = process_provider_signature_validation(
+    _, _, provider_address = process_provider_signature_validation(
         data.get("providerSignature"), f"{owner}", nonce
     )
-    if msg:
-        return Response(json.dumps({"error": msg}), status, headers=standard_headers)
 
     job_id = generate_new_id()
     logger.info(f"Got job_id: {job_id}")
