@@ -551,7 +551,7 @@ def get_indexed_result():
         logger.info(f"Got {output_owner}")
         logger.info(f"Got {outputs}")
         if owner != output_owner:
-            msg = f"Owner {owner} not found"
+            msg = f"Owner {owner} mismatch for job {job_id}"
             return Response(json.dumps({"error": msg}), 404, headers=standard_headers)
 
         wanted_jobs = get_job_by_provider_and_owner(
@@ -559,7 +559,7 @@ def get_indexed_result():
         )
         logger.info(f"Got jobs by owner and provider: {wanted_jobs}")
         if wanted_jobs is None:
-            msg = f"Job by provider {provider_address} not found"
+            msg = f"Provider {provider_address} mismatch for job {job_id}"
             return Response(json.dumps({"error": msg}), 404, headers=standard_headers)
 
         if outputs is None or not isinstance(outputs, list):
