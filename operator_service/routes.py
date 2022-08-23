@@ -18,6 +18,7 @@ from operator_service.data_store import (
     get_sql_job_urls,
     get_sql_environments,
     check_environment_exists,
+    get_job_by_provider_and_owner,
 )
 from operator_service.kubernetes_api import KubeAPI
 from operator_service.utils import (
@@ -545,15 +546,30 @@ def get_indexed_result():
                 json.dumps({"error": msg}), status, headers=standard_headers
             )
         index = int(index)
-        outputs, owner = get_sql_job_urls(job_id)
-        # TO DO - check owner here & provider
-        logger.info(f"Got {owner}")
+        outputs, output_owner = get_sql_job_urls(job_id)
+        # check owner & provider
+        logger.info(f"Got {output_owner}")
         logger.info(f"Got {outputs}")
+        if owner != output_owner:
+            msg = f"Owner {owner} mismatch for job {job_id}"
+            return Response(json.dumps({"error": msg}), 404, headers=standard_headers)
+
+        wanted_jobs = get_job_by_provider_and_owner(
+            owner=owner, provider=provider_address
+        )
+        logger.info(f"Got jobs by owner and provider: {wanted_jobs}")
+        if wanted_jobs is None:
+            msg = f"Provider {provider_address} mismatch for job {job_id}"
+            return Response(json.dumps({"error": msg}), 404, headers=standard_headers)
+
         if outputs is None or not isinstance(outputs, list):
             msg = f"No results for job {job_id}"
             return Response(json.dumps({"error": msg}), 404, headers=standard_headers)
         # check the index
         logger.info(f"Len outputs {len(outputs)}, index: {index}")
+        if int(index) < 0:
+            msg = f"Negative index {index}"
+            return Response(json.dumps({"error": msg}), 404, headers=standard_headers)
         if int(index) >= len(outputs):
             msg = f"No such index {index} in this compute job"
             return Response(json.dumps({"error": msg}), 404, headers=standard_headers)
