@@ -6,8 +6,7 @@ from flask_sieve.rules_processor import RulesProcessor
 from flask_sieve.validator import Validator
 from kubernetes.client.rest import ApiException
 
-from operator_service.data_store import (check_environment_exists,
-                                         get_sql_running_jobs)
+from operator_service.data_store import check_environment_exists, get_sql_running_jobs
 from operator_service.utils import process_provider_signature_validation
 
 logger = logging.getLogger(__name__)
