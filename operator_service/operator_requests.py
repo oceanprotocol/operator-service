@@ -144,3 +144,14 @@ class StatusOrStopRequest(CustomJsonRequest):
             "agreementId": ["bail", "required_without_all:owner,jobId", "min:2"],
             "jobId": ["bail", "required_without_all:owner,agreementId", "min:2"],
         }
+
+
+class IndexedResultRequest(CustomJsonRequest):
+    def rules(self):
+        return {
+            "owner": ["bail", "required"],
+            "providerSignature": ["bail", "required", "signature:owner,nonce,jobId"],
+            "nonce": ["required"],
+            "index": ["bail", "required"],
+            "jobId": ["bail", "required"],
+        }

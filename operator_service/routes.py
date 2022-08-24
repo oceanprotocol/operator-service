@@ -24,7 +24,7 @@ from operator_service.data_store import (
     stop_sql_job,
 )
 from operator_service.kubernetes_api import KubeAPI
-from operator_service.operator_requests import StartRequest, StatusOrStopRequest
+from operator_service.operator_requests import StartRequest, StatusOrStopRequest, IndexedResultRequest
 from operator_service.utils import (
     build_download_response,
     check_required_attributes,
@@ -339,6 +339,7 @@ def get_running_jobs():
 
 
 @services.route("/getResult", methods=["GET"])
+@validate(IndexedResultRequest)
 def get_indexed_result():
     """
     Get one result from a compute job, based on the index.
@@ -375,32 +376,14 @@ def get_indexed_result():
     try:
         requests_session = get_requests_session()
         data = request.args if request.args else request.json
-        if data is None:
-            msg = f"Both index & job_id are required"
-            return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
-        required_attributes = ["owner", "providerSignature", "nonce", "index", "jobId"]
-        msg, status = check_required_attributes(
-            required_attributes, data, "GET:/getResult"
-        )
-        if msg:
-            return Response(
-                json.dumps({"error": msg}), status, headers=standard_headers
-            )
         index = data.get("index", None)
         job_id = data.get("jobId", None)
         owner = data.get("owner", None)
         nonce = data.get("nonce", None)
-        # verify provider's signature
-        msg, status, provider_address = process_provider_signature_validation(
-            data.get("providerSignature"), f"{owner}{job_id}", nonce
-        )
-        if msg:
-            return Response(
-                json.dumps({"error": msg}), status, headers=standard_headers
-            )
         index = int(index)
         outputs, output_owner = get_sql_job_urls(job_id)
         # check owner & provider
+
         logger.info(f"Got {output_owner}")
         logger.info(f"Got {outputs}")
         if owner != output_owner:
@@ -431,12 +414,9 @@ def get_indexed_result():
             request, requests_session, outputs[index]["url"], None
         )
 
-    except ApiException as e:
-        msg = f"Error getting the status: {e}"
-        logger.error(msg)
-        return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
-    except Exception as e:
-        msg = f"{e}"
+    except (ApiException, Exception) as e:
+        prefix = f"Error getting the status: " if isinstance(e, ApiException) else ""
+        msg = prefix + f"{e}"
         logger.error(msg)
         return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
 
