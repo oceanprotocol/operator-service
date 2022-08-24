@@ -154,29 +154,35 @@ def test_stop_compute_job(client, monkeypatch, setup_mocks):
 
     response = client.put(COMPUTE_URL, json=decorate_nonce({"agreementId": "a"}))
     assert response.status_code == 400
-    assert response.json["errors"]["agreementId"] == ['The agreementId must be at least 2 characters.']
+    assert response.json["errors"]["agreementId"] == [
+        "The agreementId must be at least 2 characters."
+    ]
     assert "owner" not in response.json["errors"]
     assert "jobId" not in response.json["errors"]
 
     response = client.put(COMPUTE_URL, json=decorate_nonce({"jobId": "a"}))
     assert response.status_code == 400
-    assert response.json["errors"]["jobId"] == ['The jobId must be at least 2 characters.']
+    assert response.json["errors"]["jobId"] == [
+        "The jobId must be at least 2 characters."
+    ]
     assert "agreementId" not in response.json["errors"]
     assert "owner" not in response.json["errors"]
 
     response = client.put(COMPUTE_URL, json=decorate_nonce({"owner": "a"}))
     assert response.status_code == 400
-    assert response.json["errors"]["owner"] == ['The owner must be at least 2 characters.']
+    assert response.json["errors"]["owner"] == [
+        "The owner must be at least 2 characters."
+    ]
     assert "agreementId" not in response.json["errors"]
     assert "jobId" not in response.json["errors"]
 
     # TODO: uncomment when signatures are settled
-    #invalid_sig = decorate_nonce({"jobId": "test"})
-    #invalid_sig["providerSignature"] = decorate_nonce(payloads.VALID_COMPUTE_BODY)["providerSignature"]
-    #response = client.put(COMPUTE_URL, json=invalid_sig)
-    #assert response.status_code == 400
-    #import pdb; pdb.set_trace()
-    #assert response.json["errors"]["providerSignature"] == ['The owner must be at least 2 characters.']
+    # invalid_sig = decorate_nonce({"jobId": "test"})
+    # invalid_sig["providerSignature"] = decorate_nonce(payloads.VALID_COMPUTE_BODY)["providerSignature"]
+    # response = client.put(COMPUTE_URL, json=invalid_sig)
+    # assert response.status_code == 400
+    # import pdb; pdb.set_trace()
+    # assert response.json["errors"]["providerSignature"] == ['The owner must be at least 2 characters.']
 
 
 def test_delete_compute_job(client, monkeypatch):

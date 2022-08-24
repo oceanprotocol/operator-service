@@ -135,7 +135,7 @@ class StartRequest(CustomJsonRequest):
         }
 
 
-class StopRequest(CustomJsonRequest):
+class StatusOrStopRequest(CustomJsonRequest):
     def rules(self):
         return {
             "owner": ["bail", "required_without_all:agreementId,jobId", "min:2"],

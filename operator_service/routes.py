@@ -24,7 +24,7 @@ from operator_service.data_store import (
     stop_sql_job,
 )
 from operator_service.kubernetes_api import KubeAPI
-from operator_service.operator_requests import StartRequest, StopRequest
+from operator_service.operator_requests import StartRequest, StatusOrStopRequest
 from operator_service.utils import (
     build_download_response,
     check_required_attributes,
@@ -32,9 +32,9 @@ from operator_service.utils import (
     generate_new_id,
     get_compute_resources,
     get_namespace_configs,
+    get_signer,
     process_provider_signature_validation,
     sanitize_response_for_provider,
-    get_signer
 )
 
 logger = logging.getLogger(__name__)
@@ -167,7 +167,7 @@ def start_compute_job():
 
 
 @services.route("/compute", methods=["PUT"])
-@validate(StopRequest)
+@validate(StatusOrStopRequest)
 def stop_compute_job():
     """
     Stop the current compute job..
@@ -255,6 +255,7 @@ def delete_compute_job():
 
 
 @services.route("/compute", methods=["GET"])
+@validate(StatusOrStopRequest)
 def get_compute_job_status():
     """
     Get status for an specific or multiple jobs.
@@ -291,41 +292,11 @@ def get_compute_job_status():
     """
     try:
         data = request.args if request.args else request.json
-        if data is None:
-            msg = f"You have to specify one of agreementId, jobId or owner"
-            return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
         agreement_id = data.get("agreementId", None)
         owner = data.get("owner", None)
         job_id = data.get("jobId", None)
         chain_id = data.get("chainId", None)
 
-        if not agreement_id or len(agreement_id) < 2:
-            agreement_id = None
-
-        if not job_id or len(job_id) < 2:
-            job_id = None
-
-        if not owner or len(owner) < 2:
-            owner = None
-
-        if owner is None and agreement_id is None and job_id is None:
-            msg = f"You have to specify one of agreementId, jobId or owner"
-            logger.error(msg)
-            return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
-
-        nonce = data.get("nonce", None)
-        # verify provider's signature
-        if job_id:
-            sign_message = f"{owner}{job_id}"
-        else:
-            sign_message = f"{owner}"
-        msg, status, provider_address = process_provider_signature_validation(
-            data.get("providerSignature"), sign_message, nonce
-        )
-        if msg:
-            return Response(
-                json.dumps({"error": msg}), status, headers=standard_headers
-            )
         logger.info(f"Got status request for {agreement_id}, {job_id}, {owner}")
         api_response = get_sql_status(agreement_id, job_id, owner, chain_id)
 
@@ -334,13 +305,9 @@ def get_compute_job_status():
             200,
             headers=standard_headers,
         )
-
-    except ApiException as e:
-        msg = f"Error getting the status: {e}"
-        logger.error(msg)
-        return Response(json.dumps({"error": msg}), 400)
-    except Exception as e:
-        msg = f"{e}"
+    except (ApiException, Exception) as e:
+        prefix = f"Error getting the status: " if isinstance(e, ApiException) else ""
+        msg = prefix + f"{e}"
         logger.error(msg)
         return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
 
