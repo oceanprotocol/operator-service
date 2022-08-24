@@ -105,7 +105,11 @@ def process_provider_signature_validation(signature, original_msg, nonce):
 
     if not signature or not original_msg:
         return f"`providerSignature` of agreementId is required.", 400, None
+
     original_msg = f"{original_msg}{nonce}"
+
+    # TODO: add actual checks: original message should match
+    # including did/jobId, owner etc.
 
     if is_verify_signature_required():
         # verify provider's signature

@@ -45,6 +45,9 @@ def decorate_nonce(payload):
     except (KeyError, IndexError):
         did = ""
 
+    if "jobId" in payload:
+        did = payload["jobId"]
+
     wallet = payloads.VALID_WALLET
 
     msg = f"{wallet.address}{did}{nonce}"

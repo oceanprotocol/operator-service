@@ -86,7 +86,7 @@ class CustomRulesProcessor(RulesProcessor):
         return value not in [job["agreementId"] for job in active_jobs]
 
     def validate_environment_exists(self, value, params, **kwargs):
-        if not check_environment_exists(value, params[0]):
+        if not check_environment_exists(value, self._attribute_value(params[0])):
             logger.error(f"Environment invalid or does not exist")
             return False
 
@@ -111,10 +111,12 @@ class CustomRulesProcessor(RulesProcessor):
             return True
 
     def validate_signature(self, value, params, **kwargs):
-        owner = params[0]
-        nonce = params[1]
+        owner = self._attribute_value(params[0])
+        nonce = self._attribute_value(params[1])
+        jobId = self._attribute_value(params[2]) if len(params) > 2 else ""
 
-        msg, _, _ = process_provider_signature_validation(value, f"{owner}", nonce)
+        original_msg = f"{owner}{jobId}"
+        msg, _, _ = process_provider_signature_validation(value, original_msg, nonce)
 
         return not msg
 
@@ -130,4 +132,15 @@ class StartRequest(CustomJsonRequest):
             "environment": ["required", "environment_exists:chainId"],
             "providerSignature": ["bail", "required", "signature:owner,nonce"],
             "nonce": ["required"],
+        }
+
+
+class StopRequest(CustomJsonRequest):
+    def rules(self):
+        return {
+            "owner": ["bail", "required_without_all:agreementId,jobId", "min:2"],
+            "providerSignature": ["bail", "required", "signature:owner,nonce,jobId"],
+            "nonce": ["required"],
+            "agreementId": ["bail", "required_without_all:owner,jobId", "min:2"],
+            "jobId": ["bail", "required_without_all:owner,agreementId", "min:2"],
         }
