@@ -1,8 +1,8 @@
-import os
 import logging
+import os
 
 import psycopg2
-from flask import Blueprint, jsonify, request, Response
+from flask import Blueprint, Response, jsonify, request
 from flask_headers import headers
 from kubernetes.client.rest import ApiException
 

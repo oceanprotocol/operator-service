@@ -24,7 +24,11 @@ from operator_service.data_store import (
     stop_sql_job,
 )
 from operator_service.kubernetes_api import KubeAPI
-from operator_service.operator_requests import StartRequest, StatusOrStopRequest, IndexedResultRequest
+from operator_service.operator_requests import (
+    IndexedResultRequest,
+    StartRequest,
+    StatusOrStopRequest,
+)
 from operator_service.utils import (
     build_download_response,
     check_required_attributes,

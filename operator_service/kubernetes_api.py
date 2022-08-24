@@ -2,7 +2,6 @@ from os import path
 
 import kubernetes
 from kubernetes import client
-
 from operator_service.config import Config
 
 # Configuration to connect to k8s.

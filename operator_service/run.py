@@ -3,14 +3,15 @@
 
 import configparser
 import os
+
 from flask import jsonify
 from flask_swagger import swagger
 from flask_swagger_ui import get_swaggerui_blueprint
 
+from operator_service.admin_routes import adminpg_services
 from operator_service.constants import BaseURLs, ConfigSections, Metadata
 from operator_service.myapp import app
 from operator_service.routes import services
-from operator_service.admin_routes import adminpg_services
 
 
 @app.after_request
