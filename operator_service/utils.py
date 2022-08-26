@@ -103,7 +103,7 @@ def process_provider_signature_validation(signature, original_msg, nonce):
     else:
         update_nonce_for_a_certain_provider(nonce, address)
 
-    if not signature or not original_msg:
+    if not signature:
         return f"`providerSignature` of agreementId is required.", 400, None
 
     original_msg = f"{original_msg}{nonce}"

@@ -111,9 +111,12 @@ class CustomRulesProcessor(RulesProcessor):
             return True
 
     def validate_signature(self, value, params, **kwargs):
-        owner = self._attribute_value(params[0])
-        nonce = self._attribute_value(params[1])
+        owner = self._attribute_value(params[0]) or ""
+        nonce = self._attribute_value(params[1]) or ""
         jobId = self._attribute_value(params[2]) if len(params) > 2 else ""
+
+        if not jobId:
+            jobId = ""
 
         original_msg = f"{owner}{jobId}"
         msg, _, _ = process_provider_signature_validation(value, original_msg, nonce)

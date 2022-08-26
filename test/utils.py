@@ -48,9 +48,11 @@ def decorate_nonce(payload):
     if "jobId" in payload:
         did = payload["jobId"]
 
+    owner = payload.get("owner", "")
+
     wallet = payloads.VALID_WALLET
 
-    msg = f"{wallet.address}{did}{nonce}"
+    msg = f"{owner}{did}{nonce}"
     signature = sign_message(msg, wallet)
 
     payload["nonce"] = nonce
