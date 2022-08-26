@@ -65,6 +65,7 @@ def get_signer(signature, message):
     """
     Returns signer of a message.
     """
+    orig_sig = signature
 
     signature_bytes = Web3.toBytes(hexstr=signature)
     if signature_bytes[64] == 27:
