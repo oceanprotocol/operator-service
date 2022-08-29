@@ -66,4 +66,3 @@ del INVALID_STAGE_COMPUTE_BODY["workflow"]["stages"][0]["algorithm"]
 
 VALID_COMPUTE_BODY_WITH_NO_MAXTIME = deepcopy(VALID_COMPUTE_BODY)
 del VALID_COMPUTE_BODY_WITH_NO_MAXTIME["workflow"]["stages"][0]["compute"]["maxtime"]
-

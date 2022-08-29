@@ -110,13 +110,14 @@ def test_start_compute_job(client, monkeypatch, setup_mocks):
 
 def test_stop_compute_job(client, monkeypatch, setup_mocks):
     # TODO: uncomment when signatures are settled
-    #invalid_sig = decorate_nonce({"jobId": "test"})
-    #valid_another = decorate_nonce(payloads.VALID_COMPUTE_BODY)
-    #import pdb; pdb.set_trace()
-    #invalid_sig["providerSignature"] = valid_another["providerSignature"]
-    #invalid_sig["nonce"] = valid_another["nonce"]
-    #response = client.put(COMPUTE_URL, json=invalid_sig)
-    # the status is 400, but the failure is not from the requests check!
+    # with monkeypatch.context() as m:
+    # m.setattr(SQLMock, "expected_job_id", "test")
+    # invalid_sig = decorate_nonce({"jobId": "test"})
+    # valid_another = decorate_nonce(payloads.VALID_COMPUTE_BODY)
+    # invalid_sig["providerSignature"] = valid_another["providerSignature"]
+    # invalid_sig["nonce"] = valid_another["nonce"]
+    # response = client.put(COMPUTE_URL, json=invalid_sig)
+    # import pdb; pdb.set_trace()
     # assert response.status_code == 400
 
     with monkeypatch.context() as m:
