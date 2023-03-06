@@ -26,7 +26,7 @@ RUN pip install .
 ENV OPERATOR_URL='http://0.0.0.0:8050'
 
 # docker-entrypoint.sh configuration file variables
-ENV OPERATOR_WORKERS='1'
+ENV OPERATOR_WORKERS='20'
 ENV OPERATOR_TIMEOUT='9000'
 ENV ALGO_POD_TIMEOUT='3600'
 ENV ALLOWED_PROVIDERS=""
