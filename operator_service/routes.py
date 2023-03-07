@@ -619,9 +619,15 @@ def get_requests_session() -> Session:
     session = Session()
     retries = Retry(total=3, backoff_factor=1, status_forcelist=[502, 503, 504])
     session.mount(
-        "http://", HTTPAdapter(pool_connections=25, pool_maxsize=25, pool_block=True, max_retries=retries)
+        "http://",
+        HTTPAdapter(
+            pool_connections=25, pool_maxsize=25, pool_block=True, max_retries=retries
+        ),
     )
     session.mount(
-        "https://", HTTPAdapter(pool_connections=25, pool_maxsize=25, pool_block=True, max_retries=retries)
+        "https://",
+        HTTPAdapter(
+            pool_connections=25, pool_maxsize=25, pool_block=True, max_retries=retries
+        ),
     )
     return session
