@@ -14,7 +14,6 @@ with open("CHANGELOG.md") as history_file:
     history = history_file.read()
 
 install_requirements = [
-    "ocean-lib",
     "web3==5.25.0",
     "eth_account",
     "coloredlogs==15.0.1",
