@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 services = Blueprint("services", __name__)
 
-standard_headers = {"Content-type": "application/json", "Connection": "close"}
+standard_headers = {"Content-Type": "application/json", "Connection": "close"}
 
 # Configuration to connect to k8s.
 if not path.exists("/.dockerenv"):
