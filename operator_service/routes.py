@@ -31,7 +31,7 @@ from operator_service.utils import (
     get_namespace_configs,
     build_download_response,
 )
-from requests.adapters import HTTPAdapter
+from requests.adapters import HTTPAdapter, Retry
 from requests.sessions import Session
 
 logger = logging.getLogger(__name__)
@@ -617,10 +617,11 @@ def get_requests_session() -> Session:
     :return: requests session
     """
     session = Session()
+    retries = Retry(total=3, backoff_factor=1, status_forcelist=[502, 503, 504])
     session.mount(
-        "http://", HTTPAdapter(pool_connections=25, pool_maxsize=25, pool_block=True)
+        "http://", HTTPAdapter(pool_connections=25, pool_maxsize=25, pool_block=True, max_retries=retries)
     )
     session.mount(
-        "https://", HTTPAdapter(pool_connections=25, pool_maxsize=25, pool_block=True)
+        "https://", HTTPAdapter(pool_connections=25, pool_maxsize=25, pool_block=True, max_retries=retries)
     )
     return session
