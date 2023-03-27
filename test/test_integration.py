@@ -129,4 +129,3 @@ def test_integration():
         if status.get("dateFinished") and Decimal(status["dateFinished"]) > 0:
             break
         time.sleep(5)
-
