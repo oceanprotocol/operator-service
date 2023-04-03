@@ -7,6 +7,7 @@ RUN apk add --no-cache --update\
     build-base \
     cmake \
     openblas-dev \
+    pkgconfig \
     gcc \
     gfortran \
     gettext\
