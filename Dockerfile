@@ -5,6 +5,7 @@ ARG VERSION
 
 RUN apk add --no-cache --update\
     build-base \
+    cmake \
     gcc \
     gfortran \
     gettext\
