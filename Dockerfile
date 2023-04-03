@@ -6,6 +6,7 @@ ARG VERSION
 RUN apk add --no-cache --update\
     build-base \
     gcc \
+    gfortran \
     gettext\
     gmp \
     gmp-dev \
