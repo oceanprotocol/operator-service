@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from eth_keys import KeyAPI
 from eth_keys.backends import NativeECCBackend
@@ -39,7 +39,7 @@ def sign_message(message, wallet):
 
 
 def decorate_nonce(payload):
-    nonce = str(datetime.utcnow().timestamp())
+    nonce = str(datetime.now(timezone.utc).timestamp())
     try:
         did = payload["workflow"]["stages"][0]["input"][0]["id"]
     except (KeyError, IndexError):
