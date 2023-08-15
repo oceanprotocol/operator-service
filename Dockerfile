@@ -1,21 +1,19 @@
-FROM python:3.8-alpine
+FROM python:3.8-slim-buster
 LABEL maintainer="Ocean Protocol <devops@oceanprotocol.com>"
 
 ARG VERSION
 
-RUN apk add --no-cache --update\
-    build-base \
-    gcc \
-    gettext\
-    gmp \
-    gmp-dev \
-    libffi-dev \
-    openssl-dev \
-    py-pip \
-    python3 \
-    python3-dev \
-    postgresql-dev \
-  && pip install virtualenv
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        gcc \
+        gettext \
+        libgmp-dev \
+        libffi-dev \
+        libssl-dev \
+        libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY . /operator-service
 WORKDIR /operator-service
