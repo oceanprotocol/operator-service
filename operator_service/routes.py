@@ -433,6 +433,9 @@ def get_compute_job_status():
             sign_message = f"{owner}{job_id}"
         else:
             sign_message = f"{owner}"
+        logger.info(
+            f"route get status process signature\nproviderSignature: {data.get('providerSignature')}\nsign_message: {sign_message}\nnonce to compare: {nonce}"
+        )
         msg, status, provider_address = process_provider_signature_validation(
             data.get("providerSignature"), sign_message, nonce
         )

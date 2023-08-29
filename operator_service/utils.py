@@ -93,6 +93,8 @@ def process_provider_signature_validation(signature, original_msg, nonce):
         return "Failed to recover address", 400, None
 
     db_nonce = get_nonce_for_certain_provider(address)
+    logger.info(f"db_nonce in op serv: {db_nonce}")
+    logger.info(f"nonce to compare: {nonce}")
 
     if db_nonce and float(nonce) <= float(db_nonce):
         msg = (
