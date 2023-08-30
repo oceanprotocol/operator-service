@@ -25,7 +25,7 @@ install_requirements = [
     "Jinja2>=2.10.1,<3.1",
     "kubernetes==27.2.0",
     "requests>=2.21.0",
-    "gunicorn==19.9.0",
+    "gunicorn==21.2.0",
     "PyYAML>=5.4.1",
     "pytz==2018.5",
     "simplejson>=3.13.2",
