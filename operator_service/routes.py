@@ -7,7 +7,6 @@ import kubernetes
 from flask import Blueprint, request, Response
 
 
-
 from operator_service.data_store import (
     create_sql_job,
     get_sql_status,
@@ -170,7 +169,7 @@ def start_compute_job():
         msg = f"Error getting the active jobs for initializing a compute job: {e}"
         logger.error(msg)
         return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
-    
+
     environment = data.get("environment")
     if not check_environment_exists(environment, workflow["chainId"]):
         logger.error(f"Environment invalid or does not exist")
@@ -438,7 +437,7 @@ def get_compute_job_status():
         msg = f"Error getting the status: {e}"
         logger.error(msg)
         return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
-    
+
 
 @services.route("/runningjobs", methods=["GET"])
 def get_running_jobs():
@@ -559,6 +558,7 @@ def get_indexed_result():
         msg = f"Error getResult: {e}"
         logger.error(msg)
         return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
+
 
 @services.route("/environments", methods=["GET"])
 def get_environments():
