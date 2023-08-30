@@ -32,8 +32,6 @@ class KubeAPIMock:
         correct_body = create_compute_job(
             processed_workflow,
             FAKE_UUID,
-            config.group,
-            config.version,
             config.namespace,
         )
         assert body == correct_body

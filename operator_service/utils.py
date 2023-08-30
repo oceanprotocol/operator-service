@@ -7,7 +7,6 @@ import mimetypes
 from cgi import parse_header
 from os import getenv
 
-from kubernetes.client.rest import ApiException
 from eth_keys import KeyAPI
 from eth_keys.backends import NativeECCBackend
 from flask import Response, request
@@ -31,9 +30,9 @@ def generate_new_id():
     return uuid.uuid4().hex
 
 
-def create_compute_job(workflow, execution_id, group, version, namespace):
+def create_compute_job(workflow, execution_id, namespace):
     execution = dict()
-    execution["apiVersion"] = group + "/" + version
+    execution["apiVersion"] = 'v0.0.1'
     execution["kind"] = "WorkFlow"
     execution["metadata"] = dict()
     execution["metadata"]["name"] = execution_id
@@ -127,7 +126,7 @@ def get_list_of_allowed_providers():
             logger.error("Failed loading ALLOWED_PROVIDERS")
             return []
         return config_allowed_list
-    except ApiException as e:
+    except Exception as e:
         logging.error(
             f'Exception when calling json.loads(os.getenv("ALLOWED_PROVIDERS")): {e}'
         )
