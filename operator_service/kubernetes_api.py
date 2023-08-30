@@ -1,4 +1,3 @@
-
 import base64
 from tempfile import NamedTemporaryFile
 import os
@@ -18,11 +17,11 @@ except Exception as e:
     logger.error("Failed to load kubernetes config")
     exit(1)
 
+
 class KubeAPI:
     # create instances of the API classes
     api_customobject = client.CustomObjectsApi()
     api_core = client.CoreV1Api()
-
 
     def __init__(self, config=None):
         if config is None:

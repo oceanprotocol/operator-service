@@ -32,7 +32,7 @@ def generate_new_id():
 
 def create_compute_job(workflow, execution_id, namespace):
     execution = dict()
-    execution["apiVersion"] = 'v0.0.1'
+    execution["apiVersion"] = "v0.0.1"
     execution["kind"] = "WorkFlow"
     execution["metadata"] = dict()
     execution["metadata"]["name"] = execution_id

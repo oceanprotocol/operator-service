@@ -18,6 +18,7 @@ config = Config()
 logger = logging.getLogger(__name__)
 kube_api = KubeAPI(config)
 
+
 @adminpg_services.route("/pgsqlinit", methods=["POST"])
 @headers({"Admin": ""})
 def init_pgsql_compute():
@@ -244,7 +245,7 @@ def get_logs():
         logger.error(output)
         return output, code
     data = request.args
-    
+
     try:
         job_id = data.get("jobId")
         component = data.get("component")

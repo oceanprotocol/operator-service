@@ -44,7 +44,7 @@ dev_requirements = [
     "twine==1.11.0",
     "flake8",
     "isort",
-    "black==22.1.0",
+    "black==22.3.0",
     "click==8.0.4",
     "pre-commit",
     "licenseheaders",
