@@ -170,8 +170,15 @@ def get_nonce_for_certain_provider(provider_address: str):
         if not rows:
             logger.info("nonce is null")
             return []
-        logger.info(f"nonce found: {max([float(row[0]) for row in rows])}")
-        return max([float(row[0]) for row in rows])
+        values = []
+        for row in rows:
+            if isinstance(row[0], str) and len(row[0]) == 19:
+                values.append(int(row[0]))
+            else:
+                values.append(float(row[0]))
+
+        logger.info(f"nonce found: {max(values)}")
+        return max(values)
     except (Exception, psycopg2.Error) as error:
         logger.error(f"PG query error: {error}")
         return
