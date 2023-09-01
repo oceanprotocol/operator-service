@@ -4,7 +4,7 @@ import logging
 import psycopg2
 from flask import Blueprint, jsonify, request, Response
 from flask_headers import headers
-from kubernetes.client.rest import ApiException
+
 
 from operator_service.config import Config
 from operator_service.kubernetes_api import KubeAPI
@@ -16,6 +16,7 @@ admin_services = Blueprint("admin_services", __name__)
 
 config = Config()
 logger = logging.getLogger(__name__)
+kube_api = KubeAPI(config)
 
 
 @adminpg_services.route("/pgsqlinit", methods=["POST"])
@@ -168,10 +169,10 @@ def get_compute_job_info():
         return output, code
     try:
         job_id = request.args["jobId"]
-        api_response = KubeAPI(config).get_namespaced_custom_object(job_id)
+        api_response = kube_api.get_namespaced_custom_object(job_id)
         logger.info(api_response)
         return jsonify(api_response), 200
-    except ApiException as e:
+    except Exception as e:
         logger.error(f"The jobId {job_id} is not registered in your namespace: {e}")
         return f"The jobId {job_id} is not registered in your namespace.", 400
 
@@ -194,14 +195,14 @@ def list_compute_jobs():
         logger.error(output)
         return output, code
     try:
-        api_response = KubeAPI(config).list_namespaced_custom_object()
+        api_response = kube_api.list_namespaced_custom_object()
         result = list()
         for i in api_response["items"]:
             result.append(i["metadata"]["name"])
         logger.info(api_response)
         return jsonify(result), 200
 
-    except ApiException as e:
+    except Exception as e:
         logger.error(
             f"Exception when calling CustomObjectsApi->list_cluster_custom_object: {e}"
         )
@@ -244,7 +245,7 @@ def get_logs():
         logger.error(output)
         return output, code
     data = request.args
-    kube_api = KubeAPI(config)
+
     try:
         job_id = data.get("jobId")
         component = data.get("component")
@@ -254,7 +255,7 @@ def get_logs():
             f"Looking pods in ns {kube_api.namespace} with labels {label_selector}"
         )
         pod_response = kube_api.list_namespaced_pod(label_selector=label_selector)
-    except ApiException as e:
+    except Exception as e:
         logger.error(
             f"Exception when calling CustomObjectsApi->list_namespaced_pod: {e}"
         )
@@ -279,7 +280,7 @@ def get_logs():
         r.headers["Content-Type"] = "text/plain; charset=utf-8"
         return r
 
-    except ApiException as e:
+    except Exception as e:
         logger.error(
             f"Exception when calling CustomObjectsApi->read_namespaced_pod_log: {e}"
         )

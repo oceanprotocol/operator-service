@@ -7,7 +7,6 @@ import mimetypes
 from cgi import parse_header
 from os import getenv
 
-from kubernetes.client.rest import ApiException
 from eth_keys import KeyAPI
 from eth_keys.backends import NativeECCBackend
 from flask import Response, request
@@ -31,9 +30,9 @@ def generate_new_id():
     return uuid.uuid4().hex
 
 
-def create_compute_job(workflow, execution_id, group, version, namespace):
+def create_compute_job(workflow, execution_id, namespace):
     execution = dict()
-    execution["apiVersion"] = group + "/" + version
+    execution["apiVersion"] = "v0.0.1"
     execution["kind"] = "WorkFlow"
     execution["metadata"] = dict()
     execution["metadata"]["name"] = execution_id
@@ -94,7 +93,7 @@ def process_provider_signature_validation(signature, original_msg, nonce):
 
     db_nonce = get_nonce_for_certain_provider(address)
 
-    if db_nonce and float(nonce) <= float(db_nonce):
+    if db_nonce and nonce <= db_nonce:
         msg = (
             f"Invalid signature expected nonce ({db_nonce}) > current nonce ({nonce})."
         )
@@ -127,7 +126,7 @@ def get_list_of_allowed_providers():
             logger.error("Failed loading ALLOWED_PROVIDERS")
             return []
         return config_allowed_list
-    except ApiException as e:
+    except Exception as e:
         logging.error(
             f'Exception when calling json.loads(os.getenv("ALLOWED_PROVIDERS")): {e}'
         )

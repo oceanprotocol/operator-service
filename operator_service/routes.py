@@ -5,9 +5,8 @@ import json
 
 import kubernetes
 from flask import Blueprint, request, Response
-from kubernetes.client.rest import ApiException
 
-from operator_service.config import Config
+
 from operator_service.data_store import (
     create_sql_job,
     get_sql_status,
@@ -20,7 +19,6 @@ from operator_service.data_store import (
     check_environment_exists,
     get_job_by_provider_and_owner,
 )
-from operator_service.kubernetes_api import KubeAPI
 from operator_service.utils import (
     create_compute_job,
     check_required_attributes,
@@ -39,14 +37,6 @@ logger = logging.getLogger(__name__)
 services = Blueprint("services", __name__)
 
 standard_headers = {"Content-type": "application/json", "Connection": "close"}
-
-# Configuration to connect to k8s.
-if not path.exists("/.dockerenv"):
-    kubernetes.config.load_kube_config()
-else:
-    kubernetes.config.load_incluster_config()
-
-config = Config()
 
 
 @services.route("/compute", methods=["POST"])
@@ -175,12 +165,8 @@ def start_compute_job():
                     400,
                     headers=standard_headers,
                 )
-    except ApiException as e:
-        msg = f"Error getting the active jobs for initializing a compute job: {e}"
-        logger.error(msg)
-        return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
     except Exception as e:
-        msg = f"{e}"
+        msg = f"Error getting the active jobs for initializing a compute job: {e}"
         logger.error(msg)
         return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
 
@@ -222,9 +208,7 @@ def start_compute_job():
             )
     job_id = generate_new_id()
     logger.info(f"Got job_id: {job_id}")
-    body = create_compute_job(
-        workflow, job_id, config.group, config.version, environment
-    )
+    body = create_compute_job(workflow, job_id, environment)
     body["metadata"]["secret"] = generate_new_id()
     logger.debug(f"Got body: {body}")
     create_sql_job(
@@ -324,17 +308,14 @@ def stop_compute_job():
 
         return Response(json.dumps(status_list), 200, headers=standard_headers)
 
-    except ApiException as e:
-        logger.error(f"Exception when stopping compute job: {e}")
+    except Exception as e:
+        msg = f"Exception when stopping compute job: {e}"
+        logger.error(msg)
         return Response(
-            json.dumps({"error": f"Error stopping job: {e}"}),
+            json.dumps({"error": msg}),
             400,
             headers=standard_headers,
         )
-    except Exception as e:
-        msg = f"{e}"
-        logger.error(msg)
-        return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
 
 
 @services.route("/compute", methods=["DELETE"])
@@ -433,6 +414,9 @@ def get_compute_job_status():
             sign_message = f"{owner}{job_id}"
         else:
             sign_message = f"{owner}"
+        logger.info(
+            f"route get status process signature\nproviderSignature: {data.get('providerSignature')}\nsign_message: {sign_message}\nnonce to compare: {nonce}"
+        )
         msg, status, provider_address = process_provider_signature_validation(
             data.get("providerSignature"), sign_message, nonce
         )
@@ -449,12 +433,8 @@ def get_compute_job_status():
             headers=standard_headers,
         )
 
-    except ApiException as e:
-        msg = f"Error getting the status: {e}"
-        logger.error(msg)
-        return Response(json.dumps({"error": msg}), 400)
     except Exception as e:
-        msg = f"{e}"
+        msg = f"Error getting the status: {e}"
         logger.error(msg)
         return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
 
@@ -475,12 +455,8 @@ def get_running_jobs():
     try:
         api_response = sanitize_response_for_provider(get_sql_running_jobs())
         return Response(json.dumps(api_response), 200, headers=standard_headers)
-    except ApiException as e:
-        msg = f"Error getting the status: {e}"
-        logger.error(msg)
-        return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
     except Exception as e:
-        msg = f"{e}"
+        msg = f"Error getting running jobs: {e}"
         logger.error(msg)
         return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
 
@@ -578,12 +554,8 @@ def get_indexed_result():
             request, requests_session, outputs[index]["url"], None
         )
 
-    except ApiException as e:
-        msg = f"Error getting the status: {e}"
-        logger.error(msg)
-        return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
     except Exception as e:
-        msg = f"{e}"
+        msg = f"Error getResult: {e}"
         logger.error(msg)
         return Response(json.dumps({"error": msg}), 400, headers=standard_headers)
 
