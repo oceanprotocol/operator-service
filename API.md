@@ -245,3 +245,54 @@ Example:
 ```
 GET /api/v1/runningjobs
 ```
+
+
+## Get environments by chain_id
+
+### GET api/v1/operator/environments?chain_id=1
+
+Gets all environments for a specific chain_id
+
+Returns
+
+One or more status objects
+
+Example:
+```json
+[
+    {
+        "id": "c2d-op-engine-dev",
+        "cpuNumber": 1,
+        "cpuType": "",
+        "gpuNumber": 0,
+        "gpuType": "",
+        "ramGB": 1,
+        "diskGB": 1,
+        "priceMin": 0,
+        "desc": "",
+        "currentJobs": 0,
+        "maxJobs": 10,
+        "consumerAddress": "0x3db8d2AEf9A1d1584adD1aDDfb7728fe64d18c3F",
+        "storageExpiry": 0,
+        "maxJobDuration": "60",
+        "lastSeen": "1705855599.640261"
+    },
+    {
+        "id": "c2d-op-engine-gpu",
+        "cpuNumber": 1,
+        "cpuType": "",
+        "gpuNumber": 0,
+        "gpuType": "",
+        "ramGB": "64",
+        "diskGB": 1,
+        "priceMin": 0,
+        "desc": "",
+        "currentJobs": 0,
+        "maxJobs": 10,
+        "consumerAddress": "0x3db8d2AEf9A1d1584adD1aDDfb7728fe64d18c3F",
+        "storageExpiry": 0,
+        "maxJobDuration": "600",
+        "lastSeen": "1705855600.537098"
+    }
+]
+```
