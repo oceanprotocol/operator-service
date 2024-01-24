@@ -18,7 +18,7 @@ install_requirements = [
     "eth_account",
     "coloredlogs==15.0.1",
     "Flask==2.1.2",
-    "Werkzeug==2.3.7",
+    "Werkzeug==2.3.8",
     "Flask-Cors==3.0.9",
     "flask-swagger==0.2.14",
     "flask-swagger-ui==3.20.9",
