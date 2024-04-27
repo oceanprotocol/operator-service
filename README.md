@@ -28,7 +28,7 @@ in charge of managing the workflow executing requests.
 Typically the Operator Service is integrated from the [Brizo proxy](https://github.com/oceanprotocol/brizo),
 but can be called independently if it.
 
-The Operator Service is in charge of stablishing the communication with the K8s cluster, allowing to:
+The Operator Service is in charge of establishing the communication with the K8s cluster, allowing to:
 
 * Register workflows as K8s objects
 * List the workflows registered in K8s
